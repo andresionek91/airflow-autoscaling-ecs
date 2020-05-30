@@ -43,7 +43,6 @@ Resources:
     Type: AWS::RDS::DBCluster
     Properties:
       AvailabilityZones: !Split [",", !ImportValue parameter-AvailabilityZones]
-      BacktrackWindow: 600
       BackupRetentionPeriod: 7
       DatabaseName: !ImportValue parameter-ServiceName
       DBClusterIdentifier: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "aurora-cluster"]]
