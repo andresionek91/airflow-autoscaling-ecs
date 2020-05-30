@@ -34,10 +34,10 @@ def _get_abs_path(path):
     return os.path.join(os.path.dirname(os.path.realpath(__file__)), path)
 
 
-def get_cloudformation_templates():
+def get_cloudformation_templates(reverse=False):
     cf_templates = []
     files = os.listdir(_get_abs_path("cloudformation"))
-    files.sort()
+    files.sort(reverse=reverse)
     for filename in files:
         path = _get_abs_path("cloudformation") + "/" + filename
         with open(path) as f:
@@ -167,6 +167,29 @@ def create_fernet_key(cf_template):
         cf_template['template_body'] = cf_template['template_body'].replace('{{FERNET_KEY}}', fernet_key)
         logging.info('New FERNET KEY created. It will be uploaded to Secret Manager')
     return cf_template
+
+
+def destroy_stacks():
+    cf_templates = get_cloudformation_templates(reverse=True)
+    existing_stacks = get_existing_stacks()
+
+    for cf_template in cf_templates:
+        if cf_template['stack_name'] in existing_stacks:
+            logging.info('DELETING STACK {stack_name}'.format(**cf_template))
+            delete_stack(**cf_template)
+
+
+def delete_stack(stack_name, **kwargs):
+    cloudformation_client.delete_stack(
+        StackName=stack_name
+    )
+
+    cloudformation_client.get_waiter('stack_delete_complete').wait(
+        StackName=stack_name,
+        WaiterConfig={'Delay': 5, 'MaxAttempts': 600}
+    )
+
+    logging.info(f'DELETE COMPLETE')
 
 
 def execute():
