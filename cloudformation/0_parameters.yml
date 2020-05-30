@@ -1,0 +1,113 @@
+Description: Set default variables to be used across templates
+
+Parameters:
+
+  ServiceName:
+    Type: String
+    Default: airflow
+
+  OwnerName:
+    Type: String
+    Default: data-engineering
+
+  Environment:
+    Type: String
+    Default: dev
+
+  AwsRegion:
+    Type: String
+    Default: eu-west-1
+
+  AvailabilityZones:
+    Type: String
+    Default: "us-east-1a,us-east-1b,us-east-1c"
+
+  CidrBlock:
+    Type: String
+    Default: 10.0.0.0
+
+  LogGroupName:
+    Type: String
+    Default: airflow/ecs/fargate
+
+  ImageVersion:
+    Type: String
+    Default: latest
+
+  MetadataDBInstanceType:
+    Type: String
+    Default: db.t3.micro
+
+  MetadataDBMaxConnections:
+    Type: String
+    Default: 100
+
+  CeleryBackendInstanceType:
+    Type: String
+    Default: cache.t2.small
+
+
+Outputs:
+  ParameterServiceName:
+    Value: !Ref ServiceName
+    Export:
+      Name: parameter-ServiceName
+
+  ParameterOwnerName:
+    Value: !Ref OwnerName
+    Export:
+      Name: parameter-OwnerName
+
+  ParameterAwsRegion:
+    Value: !Ref AwsRegion
+    Export:
+      Name: parameter-AwsRegion
+
+  ParameterAvailabilityZones:
+    Value: !Ref AvailabilityZones
+    Export:
+      Name: parameter-AvailabilityZones
+
+  ParameterEnvironment:
+    Value: !Ref Environment
+    Export:
+      Name: parameter-Environment
+
+  ParameterCidrBlock:
+    Value: !Ref CidrBlock
+    Export:
+      Name: parameter-CidrBlock
+
+  ParameterLogGroupName:
+    Value: !Ref LogGroupName
+    Export:
+      Name: parameter-LogGroupName
+
+  ParameterImageVersion:
+    Value: !Ref ImageVersion
+    Export:
+      Name: parameter-ImageVersion
+
+  ParameterMetadataDBInstanceType:
+    Value: !Ref MetadataDBInstanceType
+    Export:
+      Name: parameter-MetadataDBInstanceType
+
+  ParameterCeleryBackendInstanceType:
+    Value: !Ref CeleryBackendInstanceType
+    Export:
+      Name: parameter-CeleryBackendInstanceType
+
+  ParameterMetadataDBMaxConnections:
+    Value: !Ref MetadataDBMaxConnections
+    Export:
+      Name: parameter-MetadataDBMaxConnections
+
+Conditions:
+  HasNot: !Equals [ 'true', 'false' ]
+
+# dummy (null) resource, never created
+Resources:
+  NullResource:
+    Type: 'Custom::NullResource'
+    Condition: HasNot

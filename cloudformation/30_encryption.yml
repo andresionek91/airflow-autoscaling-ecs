@@ -1,0 +1,32 @@
+Description: Create KMS keys for encryption
+
+Resources:
+  KMSKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: Key for Airflow
+      Enabled: true
+      EnableKeyRotation: true
+      KeyUsage: ENCRYPT_DECRYPT
+      KeyPolicy:
+        Version: 2012-10-17
+        Id: key-default-1
+        Statement:
+          - Sid: Enable IAM User Permissions
+            Effect: Allow
+            Principal:
+              AWS: !Ref AWS::AccountId
+            Action: kms:*
+            Resource: '*'
+      Tags:
+        - Key: Name
+          Value: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "kms"]]
+
+
+
+Outputs:
+
+  KMSKeyId:
+    Value: !Ref KMSKey
+    Export:
+      Name: "encryption-KMSKeyId"

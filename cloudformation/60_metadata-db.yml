@@ -1,0 +1,96 @@
+Desc
+Resources:
+
+  AuroraPublicSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for Aurora Metadata DB. Public access
+      GroupName: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "aurora-public-security-group"]]
+      SecurityGroupEgress:
+        - CidrIp: 0.0.0.0/0
+          FromPort: 5432
+          IpProtocol: -1
+          ToPort: 5432
+      SecurityGroupIngress:
+        - CidrIp: 0.0.0.0/0
+          FromPort: 5432
+          IpProtocol: tcp
+          ToPort: 5432
+        - CidrIp: !Join ["/", [!ImportValue parameter-CidrBlock, "16"]]
+          FromPort: 5432
+          IpProtocol: tcp
+          ToPort: 5432
+      VpcId: !ImportValue network-VpcId
+  Tags:
+    - Key: Name
+      Value: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "aurora-public-security-group"]]
+
+  AuroraDBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: Posttgres Metadata DB Subnet Group
+      DBSubnetGroupName: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "aurora-db-subnet-group"]]
+      SubnetIds:
+        - !ImportValue network-PublicSubnet1Id
+        - !ImportValue network-PublicSubnet2Id
+        - !ImportValue network-PublicSubnet3Id
+      Tags:
+        - Key: Name
+          Value: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "aurora-db-subnet-group"]]
+
+  AuroraDBCluster:
+    Type: AWS::RDS::DBCluster
+    Properties:
+      AvailabilityZones: !ImportValue parameter-AvailabilityZones
+      BacktrackWindow: 600
+      BackupRetentionPeriod: 7
+      DatabaseName: !ImportValue parameter-ServiceName
+      DBClusterIdentifier: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "aurora-cluster"]]
+      DBClusterParameterGroupName: !Ref AuroraDBParameterGroup
+      DBSubnetGroupName: !Ref AuroraDBSubnetGroup
+      DeletionProtection: true
+      EnableHttpEndpoint: true
+      EnableIAMDatabaseAuthentication: true
+      Engine: aurora-postgresql
+      EngineMode: serverless
+      EngineVersion: 11.7
+      KmsKeyId: !ImportValue encryption-KMSKeyId
+      MasterUsername: !Join ['', ['{{resolve:secretsmanager:', !ImportValue secrets-AuroraDBSecretId, ':SecretString:username}}' ]]
+      MasterUserPassword: !Join ['', ['{{resolve:secretsmanager:', !ImportValue secrets-AuroraDBSecretId, ':SecretString:password}}' ]]
+      Port: 5432
+      ScalingConfiguration:
+        ScalingConfiguration
+      SourceRegion: !ImportValue parameter-AwsRegion
+      StorageEncrypted: True
+      VpcSecurityGroupIds:
+        - !Ref AuroraPublicSecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "aurora-db-cluster"]]
+
+  AuroraDBParameterGroup:
+    Type: AWS::RDS::DBClusterParameterGroup
+    Properties:
+      Description: Aurora Metadata DB Parameter Group
+      Family: aurora-postgresql11
+      Parameters:
+        max_connections: !ImportValue parameter-MetadataDBMaxConnections
+      Tags:
+        - Key: Name
+          Value: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "aurora-db-parameter-group"]]
+
+  SecretAuroraDBAttachment:
+    Type: AWS::SecretsManager::SecretTargetAttachment
+    Properties:
+      SecretId: !ImportValue secrets-AuroraDBSecretId
+      TargetId: !Ref AuroraDBCluster
+      TargetType: AWS::RDS::DBCluster
+
+  AuroraDBSecretRotationSchedule:
+    Type: AWS::SecretsManager::RotationSchedule
+    DependsOn: SecretAuroraDBAttachment
+    Properties:
+      SecretId: !ImportValue secrets-AuroraDBSecretId
+      RotationLambdaARN: !ImportValue secrets-SecretRotationLambdaArn
+      RotationRules:
+        AutomaticallyAfterDays: 30
