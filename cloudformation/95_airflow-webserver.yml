@@ -1,39 +1,68 @@
 Resources:
-  SchedulerSecurityGroup:
+  WebserverExternalSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: Security group for Airflow Scheduler
-      GroupName: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "scheduler-security-group"]]
+      GroupDescription: Security group for Airflow webserver. Allow all inbound traffic.
+      GroupName: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "webserver-external-security-group"]]
       SecurityGroupEgress:
         - CidrIp: 0.0.0.0/0
           FromPort: 0
           IpProtocol: -1
           ToPort: 0
+      SecurityGroupIngress:
+        - CidrIp: 0.0.0.0/0
+          FromPort: 80
+          IpProtocol: tcp
+          ToPort: 80
       VpcId: !ImportValue network-VpcId
       Tags:
         - Key: Name
-          Value: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "scheduler-security-group"]]
+          Value: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "webserver-external-security-group"]]
 
-  schedulerTaskDefinition:
+  WebserverInternalSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for Airflow webserver.
+      GroupName: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "webserver-internal-security-group"]]
+      SecurityGroupEgress:
+        - CidrIp: 0.0.0.0/0
+          FromPort: 0
+          IpProtocol: -1
+          ToPort: 0
+      SecurityGroupIngress:
+        - SecurityGroups:
+            - !Ref WebserverExternalSecurityGroup
+          FromPort: 8080
+          IpProtocol: tcp
+          ToPort: 8080
+      VpcId: !ImportValue network-VpcId
+      Tags:
+        - Key: Name
+          Value: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "webserver-internal-security-group"]]
+
+  WebserverTaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
       Cpu: 1024
       Memory: 2048
       ExecutionRoleArn: !ImportValue iam-ECSTaskRoleArn
-      Family: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "scheduler-task-definition"]]
+      Family: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "webserver-task-definition"]]
       NetworkMode: awsvpc
       RequiresCompatibilities:
         - FARGATE
       ContainerDefinitions:
-        - Name: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "scheduler"]]
+        - Name: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "webserver"]]
           Image: !Sub
             - "${AWS::AccountId}.dkr.ecr.${aws_region}.amazonaws.com/${ecr_repository}:${image_version}"
             - aws_region: !ImportValue parameter-AwsRegion
               ecr_repository: !ImportValue ecs-AirflowDockerRepositoryName
               image_version: !ImportValue parameter-ImageVersion
           Essential: true
+          PortMappings:
+            - ContainerPort: 8080
+              HostPort: 8080
           Command:
-            - scheduler
+            - webserver
           Environment:
             - Name: REDIS_HOST
               Value: !ImportValue redis-CeleryBackendHost
@@ -66,7 +95,7 @@ Resources:
                   service: !ImportValue parameter-ServiceName
                   environment: !ImportValue parameter-Environment
               awslogs-region: !ImportValue parameter-AwsRegion
-              awslogs-stream-prefix: scheduler
+              awslogs-stream-prefix: webserver
       Tags:
         - Key: Name
-          Value: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "scheduler-task-definition"]]
+          Value: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "webserver-task-definition"]]
