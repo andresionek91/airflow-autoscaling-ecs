@@ -117,7 +117,7 @@ Resources:
   WebserverAlbTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
-      Name: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "webserver-alb-target-group"]]
+      Name: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "alb-tg"]]
       Port: 8080
       Protocol: HTTP
       VpcId: !ImportValue network-VpcId
