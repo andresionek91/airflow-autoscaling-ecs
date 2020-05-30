@@ -1,56 +1,36 @@
 Resources:
-  WebserverExternalSecurityGroup:
+  workerSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: Security group for Airflow webserver. Allow all inbound traffic.
-      GroupName: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "webserver-external-security-group"]]
+      GroupDescription: Security group for Airflow workers
+      GroupName: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "worker-security-group"]]
       SecurityGroupEgress:
         - CidrIp: 0.0.0.0/0
           FromPort: 0
           IpProtocol: -1
           ToPort: 0
       SecurityGroupIngress:
-        - CidrIp: 0.0.0.0/0
-          FromPort: 80
+        - CidrIp: !Join ["/", [!ImportValue parameter-CidrBlock, "16"]]
+          FromPort: 8793
           IpProtocol: tcp
-          ToPort: 80
+          ToPort: 8793
       VpcId: !ImportValue network-VpcId
       Tags:
         - Key: Name
-          Value: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "webserver-external-security-group"]]
+          Value: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "worker-security-group"]]
 
-  WebserverInternalSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: Security group for Airflow webserver.
-      GroupName: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "webserver-internal-security-group"]]
-      SecurityGroupEgress:
-        - CidrIp: 0.0.0.0/0
-          FromPort: 0
-          IpProtocol: -1
-          ToPort: 0
-      SecurityGroupIngress:
-        - SourceSecurityGroupId: !GetAtt WebserverExternalSecurityGroup.GroupId
-          FromPort: 8080
-          IpProtocol: tcp
-          ToPort: 8080
-      VpcId: !ImportValue network-VpcId
-      Tags:
-        - Key: Name
-          Value: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "webserver-internal-security-group"]]
-
-  WebserverTaskDefinition:
+  workerTaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
-      Cpu: 1024
+      Cpu: 512
       Memory: 2048
       ExecutionRoleArn: !ImportValue iam-ECSTaskRoleArn
-      Family: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "webserver-task-definition"]]
+      Family: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "worker-task-definition"]]
       NetworkMode: awsvpc
       RequiresCompatibilities:
         - FARGATE
       ContainerDefinitions:
-        - Name: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "webserver"]]
+        - Name: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "worker"]]
           Image: !Sub
             - "${AWS::AccountId}.dkr.ecr.${aws_region}.amazonaws.com/${ecr_repository}:${image_version}"
             - aws_region: !ImportValue parameter-AwsRegion
@@ -58,10 +38,10 @@ Resources:
               image_version: !ImportValue parameter-ImageVersion
           Essential: true
           PortMappings:
-            - ContainerPort: 8080
-              HostPort: 8080
+            - ContainerPort: 8793
+              HostPort: 8793
           Command:
-            - webserver
+            - worker
           Environment:
             - Name: REDIS_HOST
               Value: !ImportValue redis-CeleryBackendHost
@@ -94,7 +74,7 @@ Resources:
                   service: !ImportValue parameter-ServiceName
                   environment: !ImportValue parameter-Environment
               awslogs-region: !ImportValue parameter-AwsRegion
-              awslogs-stream-prefix: webserver
+              awslogs-stream-prefix: worker
       Tags:
         - Key: Name
-          Value: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "webserver-task-definition"]]
+          Value: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "worker-task-definition"]]
