@@ -3,13 +3,19 @@ Description: Manages secrets for airflow resources
 Resources:
   RotationLambdaCodeBucket:
     Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
     Properties:
       BucketEncryption:
         ServerSideEncryptionConfiguration:
           - ServerSideEncryptionByDefault:
               SSEAlgorithm: aws:kms
               KMSMasterKeyID: !ImportValue encryption-KMSKeyId
-      BucketName: !Join ["-", ["s3", !ImportValue parameter-Environment, AWS::AccountId, "lambda-code"]
+      BucketName: !Join ["-", ["s3", !ImportValue parameter-Environment, !Ref 'AWS::AccountId', "lambda-code"]]
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
       Tags:
         - Key: Name
           Value: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "lambda-code-bucket"]]
