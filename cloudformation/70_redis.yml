@@ -1,0 +1,51 @@
+Description: Creates Redis resources
+
+Resources:
+  RedisSubnetGroup:
+    Type: AWS::ElastiCache::SubnetGroup
+    Properties:
+      CacheSubnetGroupName: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "redis-subnet-group"]]
+      Description: Redis Subnet Group
+      SubnetIds:
+        - !ImportValue network-PublicSubnet1Id
+        - !ImportValue network-PublicSubnet2Id
+        - !ImportValue network-PublicSubnet3Id
+
+  RedisSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for Redis
+      GroupName: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "redis-security-group"]]
+      SecurityGroupEgress:
+        - CidrIp: 0.0.0.0/0
+          FromPort: 0
+          IpProtocol: -1
+          ToPort: 0
+      SecurityGroupIngress:
+        - CidrIp: !Join ["/", [!ImportValue parameter-CidrBlock, "16"]]
+          FromPort: 6379
+          IpProtocol: tcp
+          ToPort: 6379
+      VpcId: !ImportValue network-VpcId
+      Tags:
+        - Key: Name
+          Value: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "redis-group"]]
+
+  CeleryBackend:
+    Type: AWS::ElastiCache::CacheCluster
+    Properties:
+      AutoMinorVersionUpgrade: true
+      AZMode: single-az
+      CacheNodeType: !ImportValue parameter-CeleryBackendInstanceType
+      CacheParameterGroupName: String
+      CacheSubnetGroupName: !Ref RedisSubnetGroup
+      ClusterName: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "celery-cluster"]]
+      Engine: redis
+      EngineVersion: 4.0.10
+      NumCacheNodes: !ImportValue parameter-CeleryBackendNumNodes
+      Port: 6379
+      VpcSecurityGroupIds:
+        - !Ref RedisSecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "celery-cluster"]]

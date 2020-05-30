@@ -44,7 +44,11 @@ Parameters:
 
   CeleryBackendInstanceType:
     Type: String
-    Default: cache.t2.small
+    Default: cache.t3.small
+
+  CeleryBackendNumNodes:
+    Type: String
+    Default: 1
 
 
 Outputs:
@@ -102,6 +106,12 @@ Outputs:
     Value: !Ref MetadataDBMaxConnections
     Export:
       Name: parameter-MetadataDBMaxConnections
+
+  ParameterCeleryBackendNumNodes:
+    Value: !Ref CeleryBackendNumNodes
+    Export:
+      Name: parameter-CeleryBackendNumNodes
+
 
 Conditions:
   HasNot: !Equals [ 'true', 'false' ]
