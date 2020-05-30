@@ -34,8 +34,8 @@ Resources:
           Image: !Sub
             - "${AWS::AccountId}.dkr.ecr.${aws_region}.amazonaws.com/${ecr_repository}:${image_version}"
             - aws_region: !ImportValue parameter-AwsRegion
-            - ecr_repository: !ImportValue ecs-AirflowDockerRepositoryName
-            - image_version: !ImportValue parameter-ImageVersion
+              ecr_repository: !ImportValue ecs-AirflowDockerRepositoryName
+              image_version: !ImportValue parameter-ImageVersion
           Essential: true
           PortMappings:
             - ContainerPort: 5555
