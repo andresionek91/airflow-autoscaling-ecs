@@ -3,7 +3,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "ecs-log-group"]]
-      RetentionInDays: 10
+      RetentionInDays: 14
 
 Outputs:
   AirflowECSLogGroupName:

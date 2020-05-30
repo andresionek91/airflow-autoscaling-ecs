@@ -162,9 +162,9 @@ def copy_rotate_lambda_functions_to_s3(stack_name):
 
 
 def create_fernet_key(cf_template):
-    if cf_template['stack_name'] == 'secrets':
+    if cf_template['stack_name'] == 'cfn-secrets':
         fernet_key = Fernet.generate_key().decode()
-        cf_template['template_body'] = cf_template['template_body'].str.replace('{{FERNET_KEY}}', fernet_key)
+        cf_template['template_body'] = cf_template['template_body'].replace('{{FERNET_KEY}}', fernet_key)
     return cf_template
 
 
