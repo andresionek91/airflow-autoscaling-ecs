@@ -34,7 +34,7 @@ Resources:
   PublicSubnet1:
     Type: AWS::EC2::Subnet
     Properties:
-      AvailabilityZone: !Select [0, !ImportValue parameter-AvailabilityZones]
+      AvailabilityZone: !Select [0, !Split [",", !ImportValue parameter-AvailabilityZones]]
       CidrBlock: 10.0.1.0/24
       VpcId: !Ref VPC
       Tags:
@@ -50,7 +50,7 @@ Resources:
   PublicSubnet2:
     Type: AWS::EC2::Subnet
     Properties:
-      AvailabilityZone: !Select [1, !ImportValue parameter-AvailabilityZones]
+      AvailabilityZone: !Select [1, !Split [",", !ImportValue parameter-AvailabilityZones]]
       CidrBlock: 10.0.2.0/24
       VpcId: !Ref VPC
       Tags:
@@ -66,7 +66,7 @@ Resources:
   PublicSubnet3:
     Type: AWS::EC2::Subnet
     Properties:
-      AvailabilityZone: !Select [2, !ImportValue parameter-AvailabilityZones]
+      AvailabilityZone: !Select [2, !Split [",", !ImportValue parameter-AvailabilityZones]]
       CidrBlock: 10.0.3.0/24
       VpcId: !Ref VPC
       Tags:
