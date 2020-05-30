@@ -117,12 +117,12 @@ def create_or_update_stacks():
     existing_stacks = get_existing_stacks()
 
     for cf_template in cf_templates:
+        cf_template = create_fernet_key(cf_template)
         if cf_template['stack_name'] in existing_stacks:
             logging.info('UPDATING STACK {stack_name}'.format(**cf_template))
             update_stack(**cf_template)
         else:
             logging.info('CREATING STACK {stack_name}'.format(**cf_template))
-            cf_template = create_fernet_key(cf_template)
             create_stack(**cf_template)
 
         copy_rotate_lambda_functions_to_s3(cf_template['stack_name'])
@@ -165,6 +165,7 @@ def create_fernet_key(cf_template):
     if cf_template['stack_name'] == 'cfn-secrets':
         fernet_key = Fernet.generate_key().decode()
         cf_template['template_body'] = cf_template['template_body'].replace('{{FERNET_KEY}}', fernet_key)
+        logging.info('New FERNET KEY created. It will be uploaded to Secret Manager')
     return cf_template
 
 

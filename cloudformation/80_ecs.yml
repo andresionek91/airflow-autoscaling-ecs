@@ -33,3 +33,9 @@ Resources:
       Tags:
         - Key: Name
           Value: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "ecs-cluster"]]
+
+Outputs:
+  AirflowDockerRepositoryName:
+    Value: !Ref AirflowDockerRepository
+    Export:
+      Name: "ecs-AirflowDockerRepositoryName"

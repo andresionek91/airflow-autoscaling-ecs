@@ -31,7 +31,11 @@ Resources:
         - FARGATE
       ContainerDefinitions:
         - Name: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "flower"]]
-          Image: String
+          Image: !Sub
+            - "${AWS::AccountId}.dkr.ecr.${aws_region}.amazonaws.com/${ecr_repository}:${image_version}"
+            - aws_region: !ImportValue parameter-AwsRegion
+            - ecr_repository: !ImportValue ecs-AirflowDockerRepositoryName
+            - image_version: !ImportValue parameter-ImageVersion
           Essential: true
           PortMappings:
             - ContainerPort: 5555
@@ -60,20 +64,17 @@ Resources:
             - Name: STAGE
               Value: !ImportValue parameter-Environment
             - Name: FERNET_KEY
-              Value: !Join ['', ['{{resolve:secretsmanager:', !ImportValue secrets-FernetKeySecretId, ':SecretString:fernet_key}}' ]]
+              Value: !Join ['', ['{{resolve:secretsmanager:', !ImportValue secrets-AirflowFernetKeySecretId, ':SecretString:fernet_key}}' ]]
           LogConfiguration:
             LogDriver: awslogs
             Options:
-              Key : Value
               awslogs-group: !Sub
-                - "{log_group}/${service}-${environment}"
-                - log_group: cloudwatch-AirflowECSLogGroupName
+                - "${log_group}/${service}-${environment}"
+                - log_group: !ImportValue cloudwatch-AirflowECSLogGroupName
                   service: !ImportValue parameter-ServiceName
                   environment: !ImportValue parameter-Environment
               awslogs-region: !ImportValue parameter-AwsRegion
               awslogs-stream-prefix: flower
-          Secrets:
-            - Secret
       Tags:
         - Key: Name
           Value: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "flower-task-definition"]]
