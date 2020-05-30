@@ -30,8 +30,7 @@ Resources:
           IpProtocol: -1
           ToPort: 0
       SecurityGroupIngress:
-        - SecurityGroups:
-            - !Ref WebserverExternalSecurityGroup
+        - SourceSecurityGroupId: !GetAtt WebserverExternalSecurityGroup.GroupId
           FromPort: 8080
           IpProtocol: tcp
           ToPort: 8080
