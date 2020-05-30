@@ -37,7 +37,6 @@ Resources:
       AutoMinorVersionUpgrade: true
       AZMode: single-az
       CacheNodeType: !ImportValue parameter-CeleryBackendInstanceType
-      CacheParameterGroupName: String
       CacheSubnetGroupName: !Ref RedisSubnetGroup
       ClusterName: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "celery-cluster"]]
       Engine: redis
