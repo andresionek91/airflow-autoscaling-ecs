@@ -29,7 +29,7 @@ Resources:
       VpcId: !ImportValue network-VpcId
       Tags:
         - Key: Name
-          Value: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "redis-group"]]
+          Value: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "redis-security-group"]]
 
   CeleryBackend:
     Type: AWS::ElastiCache::CacheCluster
@@ -48,3 +48,14 @@ Resources:
       Tags:
         - Key: Name
           Value: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "celery-cluster"]]
+
+Outputs:
+  CeleryBackendHost:
+    Value: !GetAtt CeleryBackend.RedisEndpoint.Address
+    Export:
+      Name: redis-CeleryBackendHost
+
+  CeleryBackendPort:
+    Value: !GetAtt CeleryBackend.RedisEndpoint.Port
+    Export:
+      Name: redis-CeleryBackendPort

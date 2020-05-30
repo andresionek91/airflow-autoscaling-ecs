@@ -1,1 +1,2 @@
 boto3==1.13.19
+cryptography==2.9.2

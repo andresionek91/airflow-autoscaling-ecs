@@ -22,7 +22,6 @@ Resources:
           ]
         }"
       RepositoryName: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "docker-ecr"]]
-      RepositoryPolicyText: Json
       Tags:
         - Key: Name
           Value: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "docker-ecr"]]
@@ -34,10 +33,3 @@ Resources:
       Tags:
         - Key: Name
           Value: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "ecs-cluster"]]
-
-  AirflowECSLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "ecs-log-group"]]
-      RetentionInDays: 10
-

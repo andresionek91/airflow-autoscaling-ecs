@@ -92,3 +92,14 @@ Resources:
       RotationLambdaARN: !ImportValue secrets-SecretRotationLambdaArn
       RotationRules:
         AutomaticallyAfterDays: 30
+
+Outputs:
+  AuroraDBClusterHost:
+    Value: !GetAtt AuroraDBCluster.Endpoint.Address
+    Export:
+      Name: database-AuroraDBClusterHost
+
+  AuroraDBClusterPort:
+    Value: !GetAtt AuroraDBCluster.Endpoint.Port
+    Export:
+      Name: database-AuroraDBClusterPort

@@ -5,6 +5,7 @@ import logging
 from zipfile import ZipFile
 from botocore.exceptions import ClientError
 from tempfile import NamedTemporaryFile
+from cryptography.fernet import Fernet
 
 STACK_TAGS = [
     {
@@ -121,6 +122,7 @@ def create_or_update_stacks():
             update_stack(**cf_template)
         else:
             logging.info('CREATING STACK {stack_name}'.format(**cf_template))
+            cf_template = create_fernet_key(cf_template)
             create_stack(**cf_template)
 
         copy_rotate_lambda_functions_to_s3(cf_template['stack_name'])
@@ -157,6 +159,13 @@ def copy_rotate_lambda_functions_to_s3(stack_name):
             Key=f'{filename}/lambda_function.zip',
             Body=temp_file
         )
+
+
+def create_fernet_key(cf_template):
+    if cf_template['stack_name'] == 'secrets':
+        fernet_key = Fernet.generate_key().decode()
+        cf_template['template_body'] = cf_template['template_body'].str.replace('{{FERNET_KEY}}', fernet_key)
+    return cf_template
 
 
 def execute():

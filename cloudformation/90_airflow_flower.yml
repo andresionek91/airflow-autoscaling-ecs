@@ -1,0 +1,79 @@
+Resources:
+  FlowerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for Airflow Flower
+      GroupName: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "flower-security-group"]]
+      SecurityGroupEgress:
+        - CidrIp: 0.0.0.0/0
+          FromPort: 0
+          IpProtocol: -1
+          ToPort: 0
+      SecurityGroupIngress:
+        - CidrIp: 0.0.0.0/0
+          FromPort: 5555
+          IpProtocol: tcp
+          ToPort: 5555
+      VpcId: !ImportValue network-VpcId
+      Tags:
+        - Key: Name
+          Value: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "flower-security-group"]]
+
+  FlowerTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Cpu: 512
+      Memory: 1024
+      ExecutionRoleArn: !ImportValue iam-ECSTaskRoleArn
+      Family: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "flower-task-definition"]]
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      ContainerDefinitions:
+        - Name: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "flower"]]
+          Image: String
+          Essential: true
+          PortMappings:
+            - ContainerPort: 5555
+              HostPort: 5555
+          Command:
+            - flower
+          Environment:
+            - Name: REDIS_HOST
+              Value: !ImportValue redis-CeleryBackendHost
+            - Name: REDIS_PORT
+              Value: !ImportValue redis-CeleryBackendPort
+            - Name: POSTGRES_HOST
+              Value: !ImportValue database-AuroraDBClusterHost
+            - Name: POSTGRES_PORT
+              Value: !ImportValue database-AuroraDBClusterPort
+            - Name: POSTGRES_USER
+              Value: !Join ['', ['{{resolve:secretsmanager:', !ImportValue secrets-AuroraDBSecretId, ':SecretString:username}}' ]]
+            - Name: POSTGRES_PASSWORD
+              Value: !Join ['', ['{{resolve:secretsmanager:', !ImportValue secrets-AuroraDBSecretId, ':SecretString:password}}' ]]
+            - Name: POSTGRES_DB
+              Value: !ImportValue parameter-ServiceName
+            - Name: AIRFLOW_BASE_URL
+              Value: !ImportValue parameter-AirflowBaseUrl
+            - Name: ENABLE_REMOTE_LOGGING
+              Value: False
+            - Name: STAGE
+              Value: !ImportValue parameter-Environment
+            - Name: FERNET_KEY
+              Value: !Join ['', ['{{resolve:secretsmanager:', !ImportValue secrets-FernetKeySecretId, ':SecretString:fernet_key}}' ]]
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              Key : Value
+              awslogs-group: !Sub
+                - "{log_group}/${service}-${environment}"
+                - log_group: cloudwatch-AirflowECSLogGroupName
+                  service: !ImportValue parameter-ServiceName
+                  environment: !ImportValue parameter-Environment
+              awslogs-region: !ImportValue parameter-AwsRegion
+              awslogs-stream-prefix: flower
+          Secrets:
+            - Secret
+      Tags:
+        - Key: Name
+          Value: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "flower-task-definition"]]

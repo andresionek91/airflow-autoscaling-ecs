@@ -13,6 +13,10 @@ Parameters:
   Environment:
     Type: String
     Default: dev
+    AllowedValues:
+      - dev
+      - staging
+      - production
 
   AwsRegion:
     Type: String
@@ -49,6 +53,10 @@ Parameters:
   CeleryBackendNumNodes:
     Type: String
     Default: 1
+
+  AirflowBaseUrl:
+    Type: String
+    Default: http://localhost:8080
 
 
 Outputs:
@@ -111,6 +119,11 @@ Outputs:
     Value: !Ref CeleryBackendNumNodes
     Export:
       Name: parameter-CeleryBackendNumNodes
+
+  ParameterAirflowBaseUrl:
+    Value: !Ref AirflowBaseUrl
+    Export:
+      Name: parameter-AirflowBaseUrl
 
 
 Conditions:
