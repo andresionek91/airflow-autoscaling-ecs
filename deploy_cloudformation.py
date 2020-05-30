@@ -128,6 +128,10 @@ def create_or_update_stacks():
 
 def copy_rotate_lambda_functions_to_s3(stack_name):
     stack = cloudformation_resource.Stack(stack_name)
+
+    if not stack.outputs:
+        return
+
     bucket_output = [output for output in stack.outputs if output['ExportName'] == 'storage-RotationLambdaCodeBucketName']
 
     if not bucket_output:
