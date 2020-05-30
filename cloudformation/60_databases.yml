@@ -53,17 +53,12 @@ Resources:
       EnableHttpEndpoint: true
       EnableIAMDatabaseAuthentication: true
       Engine: aurora-postgresql
-      EngineMode: serverless
+      EngineMode: provisioned
       EngineVersion: 11.7
       KmsKeyId: !ImportValue encryption-KMSKeyId
       MasterUsername: !Join ['', ['{{resolve:secretsmanager:', !ImportValue secrets-AuroraDBSecretId, ':SecretString:username}}' ]]
       MasterUserPassword: !Join ['', ['{{resolve:secretsmanager:', !ImportValue secrets-AuroraDBSecretId, ':SecretString:password}}' ]]
       Port: 5432
-      ScalingConfiguration:
-        AutoPause: true
-        MaxCapacity: 8
-        MinCapacity: 2
-        SecondsUntilAutoPause: 600
       SourceRegion: !ImportValue parameter-AwsRegion
       StorageEncrypted: True
       VpcSecurityGroupIds:
