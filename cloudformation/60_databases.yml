@@ -1,4 +1,5 @@
-Desc
+Description: Creates Airflow Metadata DB with credential managed by AWS secrets
+
 Resources:
 
   AuroraPublicSecurityGroup:
@@ -21,9 +22,9 @@ Resources:
           IpProtocol: tcp
           ToPort: 5432
       VpcId: !ImportValue network-VpcId
-  Tags:
-    - Key: Name
-      Value: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "aurora-public-security-group"]]
+      Tags:
+        - Key: Name
+          Value: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "aurora-public-security-group"]]
 
   AuroraDBSubnetGroup:
     Type: AWS::RDS::DBSubnetGroup
@@ -59,7 +60,10 @@ Resources:
       MasterUserPassword: !Join ['', ['{{resolve:secretsmanager:', !ImportValue secrets-AuroraDBSecretId, ':SecretString:password}}' ]]
       Port: 5432
       ScalingConfiguration:
-        ScalingConfiguration
+        AutoPause: true
+        MaxCapacity: 8
+        MinCapacity: 2
+        SecondsUntilAutoPause: 600
       SourceRegion: !ImportValue parameter-AwsRegion
       StorageEncrypted: True
       VpcSecurityGroupIds:
