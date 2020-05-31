@@ -37,10 +37,10 @@ make airflow-destroy
 * Control all Airflow infrastructure from a single `service.yml` file.
 * Metadata DB Passwords Managed with AWS Secrets Manager and rotated on a configurable schedule.
 * Autoscaling enabled and configurable for all Airflow sub-services (workers, flower, webserver, scheduler)
-* 
+* TODO: Continuous Integration using AWS CodePipeline
+* TODO: Create isolated DAGs using `docker_operator`
 
-
-### Adjust Airflow workers easily: 
+### Adjust many infrastructure configs directly on Service.yml: 
 ```yaml
   workers:
     port: 8793
@@ -60,22 +60,5 @@ make airflow-destroy
         scaleOutCooldown: 120
 ```
 
-### Or modify Airflow Metadata DB: 
-```yaml
-metadataDb:
-  instanceType: db.t3.micro
-  port: 5432
-  dbName: airflow
-  engine: postgres
-  engineVersion: 11.7
-  family: postgresql11
-  deletionProtection: false
-  enableIAMDatabaseAuthentication: true
-  allocatedStorage: 20
-  secrets:
-    rotationScheduleDays: 30
-  parameters:
-    maxConnections: 100
-```
 
 *Inspired by the work done by [Nicor88](https://github.com/nicor88/aws-ecs-airflow)*
