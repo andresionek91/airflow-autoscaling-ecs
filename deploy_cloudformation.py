@@ -2,9 +2,7 @@ import boto3
 import os
 import re
 import logging
-from zipfile import ZipFile
 from botocore.exceptions import ClientError
-from tempfile import NamedTemporaryFile
 import click
 
 from utils import _get_abs_path
@@ -146,4 +144,16 @@ def delete_stack(stack_name, **kwargs):
 
     logging.info(f'DELETE COMPLETE')
 
+
+def log_outputs():
+    cf_templates = get_cloudformation_templates()
+    for cf_template in cf_templates:
+        stack_name = cf_template['stack_name']
+        logging.info(f'\n\n\n## {stack_name} OUTPUTS ##')
+        stack = cloudformation_resource.Stack(stack_name)
+        outputs = stack.outputs if stack.outputs else []
+        for output in outputs:
+            key = output.get('OutputKey', '')
+            value = output.get('OutputValue', '')
+            logging.info(f'{key}: {value}')
 

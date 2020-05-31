@@ -16,6 +16,7 @@ push-to-ecr: airflow-build
 
 airflow-deploy: infra-deploy push-to-ecr
 	python -c 'from deploy_cloudformation import create_or_update_stacks;  create_or_update_stacks(is_foundation=False)';
+	python -c 'from deploy_cloudformation import log_outputs;  log_outputs()';
 
 airflow-destroy:
 	python -c 'from deploy_cloudformation import destroy_stacks;  destroy_stacks()';
