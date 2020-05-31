@@ -4,7 +4,7 @@ Resources:
   RotationLambdaExecutionRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "lambda-role"]]
+      RoleName: "{{ serviceName }}-{{ ENVIRONMENT }}-lambda-role"
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -28,7 +28,7 @@ Resources:
                   - "secretsmanager:GetSecretValue"
                   - "secretsmanager:PutSecretValue"
                   - "secretsmanager:UpdateSecretVersionStage"
-                Resource: !Sub 'arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:*'
+                Resource: !Sub 'arn:${AWS::Partition}:secretsmanager:{{ AWS_REGION }}:${AWS::AccountId}:secret:*'
               -
                 Effect: "Allow"
                 Action:
@@ -52,7 +52,7 @@ Resources:
   ECSTaskRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "ecs-task-role"]]
+      RoleName: "{{ serviceName }}-{{ ENVIRONMENT }}-ecs-task-role"
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:

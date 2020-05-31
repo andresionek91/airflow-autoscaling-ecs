@@ -6,17 +6,8 @@ from zipfile import ZipFile
 from botocore.exceptions import ClientError
 from tempfile import NamedTemporaryFile
 from cryptography.fernet import Fernet
-
-STACK_TAGS = [
-    {
-        'Key': 'Service',
-        'Value': 'airflow'
-    },
-    {
-        'Key': 'Owner',
-        'Value': 'data-engineering'
-    },
-]
+from jinja2 import Template
+from yaml import safe_load
 
 
 class StackFailed(Exception):
@@ -34,6 +25,13 @@ def _get_abs_path(path):
     return os.path.join(os.path.dirname(os.path.realpath(__file__)), path)
 
 
+def render_yml_file_template(template):
+    with open(_get_abs_path("service.yml")) as f:
+        service_config = safe_load(f)
+
+    return Template(template).render({**service_config, **dict(os.environ)})
+
+
 def get_cloudformation_templates(reverse=False):
     cf_templates = []
     files = os.listdir(_get_abs_path("cloudformation"))
@@ -42,15 +40,17 @@ def get_cloudformation_templates(reverse=False):
         path = _get_abs_path("cloudformation") + "/" + filename
         with open(path) as f:
             template_body = f.read()
-
+        logging.info(f'Rendering template {filename}')
+        template_body = render_yml_file_template(template_body)
         cf_template = {
-            'stack_name': 'cfn-' + re.search('(?<=_)(.*)(?=.yml)', filename).group(1),
+            'stack_name': 'cfn-' + re.search('(?<=_)(.*)(?=.yml.j2)', filename).group(1),
             'template_body': template_body,
             'filename': filename
          }
         cf_templates.append(cf_template)
-
     return cf_templates
+
+get_cloudformation_templates()
 
 
 def validate_templates():
@@ -77,7 +77,6 @@ def update_stack(stack_name, template_body, **kwargs):
             StackName=stack_name,
             Capabilities=['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
             TemplateBody=template_body,
-            Tags=STACK_TAGS
         )
     except ClientError as e:
         if 'No updates are to be performed' in str(e):
@@ -100,7 +99,6 @@ def create_stack(stack_name, template_body, **kwargs):
         Capabilities=['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
         TimeoutInMinutes=30,
         OnFailure='ROLLBACK',
-        Tags=STACK_TAGS
     )
 
     cloudformation_client.get_waiter('stack_create_complete').wait(
@@ -192,10 +190,3 @@ def delete_stack(stack_name, **kwargs):
     logging.info(f'DELETE COMPLETE')
 
 
-def execute():
-    validate_templates()
-    create_or_update_stacks()
-
-
-if __name__ == '__main__':
-    execute()

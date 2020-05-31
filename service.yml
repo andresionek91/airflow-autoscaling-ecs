@@ -1,0 +1,16 @@
+serviceName: airflow
+ownerName: data-engineering
+
+service:
+  logGroupName: airflow/ecs/fargate
+  cidrBlock: 10.0.0.0
+  baseUrl: http://localhost:8080
+  imageVersion: latest
+
+metadataDb:
+  instanceType: db.t3.micro
+  maxConnections: 100
+
+celeryBackend:
+  InstanceType: cache.t3.small
+  numNodes: 1
