@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 default_args = {
     'owner': 'andresionek91',
-    'start_date': datetime(2019, 2, 20),
+    'start_date': datetime(2020, 5, 25),
     'depends_on_past': False,
     'provide_context': True
 }

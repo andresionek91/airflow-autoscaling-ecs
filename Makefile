@@ -9,7 +9,7 @@ infra-deploy: cloudformation-validate
 
 airflow-build:
 	echo "BUILDING IMAGE: airflow-$(ENVIRONMENT):latest";
-	docker build --rm -t airflow-$(ENVIRONMENT):latest .;
+	docker build --rm --pull -t airflow-$(ENVIRONMENT):latest .;
 
 push-to-ecr: airflow-build
 	bash push-to-ecr.sh;
