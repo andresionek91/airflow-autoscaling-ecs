@@ -16,7 +16,7 @@ Resources:
         - Key: Name
           Value: "{{ serviceName }}-{{ ENVIRONMENT }}-scheduler-security-group"
 
-  schedulerTaskDefinition:
+  SchedulerTaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
       Cpu: "{{ service.scheduler.cpu }}"
@@ -117,7 +117,7 @@ Resources:
     Properties:
       PolicyName: "{{ serviceName }}-{{ ENVIRONMENT }}-scheduler-tracking-memory"
       PolicyType: TargetTrackingScaling
-      ScalingTargetId: !Ref FlowerScalableTarget
+      ScalingTargetId: !Ref SchedulerScalableTarget
       TargetTrackingScalingPolicyConfiguration:
         TargetValue: "{{ service.scheduler.autoscaling.memory.target }}"
         ScaleInCooldown: "{{ service.scheduler.autoscaling.memory.scaleInCooldown }}"

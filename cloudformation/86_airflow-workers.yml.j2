@@ -1,7 +1,7 @@
 Description: Creates Airflow Workers Service
 
 Resources:
-  workerSecurityGroup:
+  WorkerSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: Security group for Airflow workers
@@ -21,7 +21,7 @@ Resources:
         - Key: Name
           Value: "{{ serviceName }}-{{ ENVIRONMENT }}-workers-security-group"
 
-  workerTaskDefinition:
+  WorkerTaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
       Cpu: "{{ service.workers.cpu }}"

@@ -39,7 +39,7 @@ def create_fernet_key():
     except client.exceptions.ResourceNotFoundException:
         fernet_key = Fernet.generate_key().decode()
         os.environ['FERNET_KEY'] = fernet_key
-        logging.info('FERNET KEY not found in Secrets Manager. New key created. It will be uploaded to Secrets Manager')
+        logging.info('FERNET KEY not found in Secrets Manager. New key created. It will be uploaded to Secrets Manager.')
 
 
 def create_default_tags():

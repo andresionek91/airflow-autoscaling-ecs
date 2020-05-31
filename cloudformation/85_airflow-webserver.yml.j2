@@ -154,7 +154,7 @@ Resources:
         AwsvpcConfiguration:
           AssignPublicIp: true
           SecurityGroups:
-            - !Ref WebserverSecurityGroup
+            - !Ref WebserverInternalSecurityGroup
           Subnets:
             - !ImportValue network-PublicSubnet1Id
             - !ImportValue network-PublicSubnet2Id
@@ -162,7 +162,7 @@ Resources:
       LoadBalancer:
         ContainerName: "{{ serviceName }}-{{ ENVIRONMENT }}-webserver"
         ContainerPort: "{{ service.webserver.port }}"
-        TargetGroupArn: !GetAtt WebserverAlbTargetGroup.Arn
+        TargetGroupArn: !Ref WebserverAlbTargetGroup
       EnableECSManagedTags: true
       PropagateTags: TASK_DEFINITION
 
