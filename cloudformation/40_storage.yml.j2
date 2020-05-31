@@ -10,7 +10,7 @@ Resources:
           - ServerSideEncryptionByDefault:
               SSEAlgorithm: aws:kms
               KMSMasterKeyID: !ImportValue encryption-KMSKeyId
-      BucketName: !Join ["-", ["s3", !ImportValue parameter-Environment, !Ref 'AWS::AccountId', "lambda-code"]]
+      BucketName: !Sub "s3-${AWS::AccountId}-{{ serviceName }}-{{ ENVIRONMENT }}-lambda-code"
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
         BlockPublicPolicy: true
@@ -18,7 +18,7 @@ Resources:
         RestrictPublicBuckets: true
       Tags:
         - Key: Name
-          Value: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "lambda-code-bucket"]]
+          Value: "{{ serviceName }}-{{ ENVIRONMENT }}-lambda-code-bucket"
 
 Outputs:
   RotationLambdaCodeBucketName:
