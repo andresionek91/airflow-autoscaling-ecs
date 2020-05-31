@@ -5,12 +5,23 @@ service:
   logGroupName: airflow/ecs/fargate
   cidrBlock: 10.0.0.0
   baseUrl: http://localhost:8080
+  port: 80
   imageVersion: latest
-
   flower:
     cpu: 512
     memory: 1024
     port: 5555
+  scheduler:
+    cpu: 1024
+    memory: 2048
+  webserver:
+    port: 8080
+    cpu: 1024
+    memory: 2048
+  workers:
+    port: 8793
+    cpu: 1024
+    memory: 2048
 
 publicSubnet:
   1:

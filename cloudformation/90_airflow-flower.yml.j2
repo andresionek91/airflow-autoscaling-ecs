@@ -33,7 +33,7 @@ Resources:
         - Name: "{{ serviceName }}-{{ ENVIRONMENT }}-flower"
           Image: !Sub
             - "${AWS::AccountId}.dkr.ecr.{{ AWS_REGION }}.amazonaws.com/${ecr_repository}:{{ service.imageVersion }}"
-            - ecr_repository: !ImportValue ecs-AirflowDockerRepositoryName
+            - ecr_repository: !ImportValue ecr-AirflowDockerRepositoryName
           Essential: true
           PortMappings:
             - ContainerPort: "{{ service.flower.port }}"

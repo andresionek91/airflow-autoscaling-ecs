@@ -3,43 +3,41 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: Security group for Airflow workers
-      GroupName: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "worker-security-group"]]
+      GroupName: "{{ serviceName }}-{{ ENVIRONMENT }}-workers-security-group"
       SecurityGroupEgress:
         - CidrIp: 0.0.0.0/0
           FromPort: 0
           IpProtocol: -1
           ToPort: 0
       SecurityGroupIngress:
-        - CidrIp: !Join ["/", [!ImportValue parameter-CidrBlock, "16"]]
-          FromPort: 8793
+        - CidrIp: "{{ service.cidrBlock }}/16"
+          FromPort: "{{ service.workers.port }}"
           IpProtocol: tcp
-          ToPort: 8793
+          ToPort: "{{ service.workers.port }}"
       VpcId: !ImportValue network-VpcId
       Tags:
         - Key: Name
-          Value: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "worker-security-group"]]
+          Value: "{{ serviceName }}-{{ ENVIRONMENT }}-workers-security-group"
 
   workerTaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
-      Cpu: 512
-      Memory: 2048
+      Cpu: "{{ service.workers.cpu }}"
+      Memory: "{{ service.workers.memory }}"
       ExecutionRoleArn: !ImportValue iam-ECSTaskRoleArn
-      Family: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "worker-task-definition"]]
+      Family: "{{ serviceName }}-{{ ENVIRONMENT }}-workers-task-definition"
       NetworkMode: awsvpc
       RequiresCompatibilities:
         - FARGATE
       ContainerDefinitions:
-        - Name: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "worker"]]
+        - Name: "{{ serviceName }}-{{ ENVIRONMENT }}-workers"
           Image: !Sub
-            - "${AWS::AccountId}.dkr.ecr.${aws_region}.amazonaws.com/${ecr_repository}:${image_version}"
-            - aws_region: !ImportValue parameter-AwsRegion
-              ecr_repository: !ImportValue ecs-AirflowDockerRepositoryName
-              image_version: !ImportValue parameter-ImageVersion
+            - "${AWS::AccountId}.dkr.ecr.{{ AWS_REGION }}.amazonaws.com/${ecr_repository}:{{ service.imageVersion }}"
+            - ecr_repository: !ImportValue ecr-AirflowDockerRepositoryName
           Essential: true
           PortMappings:
-            - ContainerPort: 8793
-              HostPort: 8793
+            - ContainerPort: "{{ service.workers.port }}"
+              HostPort: "{{ service.workers.port }}"
           Command:
             - worker
           Environment:
@@ -52,29 +50,27 @@ Resources:
             - Name: POSTGRES_PORT
               Value: !ImportValue database-AuroraDBClusterPort
             - Name: POSTGRES_USER
-              Value: !Join ['', ['{{resolve:secretsmanager:', !ImportValue secrets-AuroraDBSecretId, ':SecretString:username}}' ]]
+              Value: {% raw %} !Join ['', ['{{resolve:secretsmanager:', !ImportValue secrets-AuroraDBSecretId, ':SecretString:username}}' ]] {% endraw %}
             - Name: POSTGRES_PASSWORD
-              Value: !Join ['', ['{{resolve:secretsmanager:', !ImportValue secrets-AuroraDBSecretId, ':SecretString:password}}' ]]
+              Value: {% raw %} !Join ['', ['{{resolve:secretsmanager:', !ImportValue secrets-AuroraDBSecretId, ':SecretString:password}}' ]] {% endraw %}
             - Name: POSTGRES_DB
-              Value: !ImportValue parameter-ServiceName
+              Value: c
             - Name: AIRFLOW_BASE_URL
-              Value: !ImportValue parameter-AirflowBaseUrl
+              Value: "{{ service.baseUrl }}"
             - Name: ENABLE_REMOTE_LOGGING
               Value: False
             - Name: STAGE
-              Value: !ImportValue parameter-Environment
+              Value: "{{ ENVIRONMENT }}"
             - Name: FERNET_KEY
-              Value: !Join ['', ['{{resolve:secretsmanager:', !ImportValue secrets-AirflowFernetKeySecretId, ':SecretString:fernet_key}}' ]]
+              Value: {% raw %} !Join ['', ['{{resolve:secretsmanager:', !ImportValue secrets-AirflowFernetKeySecretId, ':SecretString:fernet_key}}' ]] {% endraw %}
           LogConfiguration:
             LogDriver: awslogs
             Options:
               awslogs-group: !Sub
-                - "${log_group}/${service}-${environment}"
+                - "${log_group}/{{ serviceName }}-{{ ENVIRONMENT }}"
                 - log_group: !ImportValue cloudwatch-AirflowECSLogGroupName
-                  service: !ImportValue parameter-ServiceName
-                  environment: !ImportValue parameter-Environment
-              awslogs-region: !ImportValue parameter-AwsRegion
-              awslogs-stream-prefix: worker
+              awslogs-region: "{{ AWS_REGION }}"
+              awslogs-stream-prefix: workers
       Tags:
         - Key: Name
-          Value: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "worker-task-definition"]]
+          Value: "{{ serviceName }}-{{ ENVIRONMENT }}-workers-task-definition"

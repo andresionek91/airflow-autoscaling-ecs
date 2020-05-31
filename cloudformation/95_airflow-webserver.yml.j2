@@ -3,7 +3,7 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: Security group for Airflow webserver. Allow all inbound traffic.
-      GroupName: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "webserver-external-security-group"]]
+      GroupName: "{{ serviceName }}-{{ ENVIRONMENT }}-webserver-security-group"
       SecurityGroupEgress:
         - CidrIp: 0.0.0.0/0
           FromPort: 0
@@ -11,19 +11,19 @@ Resources:
           ToPort: 0
       SecurityGroupIngress:
         - CidrIp: 0.0.0.0/0
-          FromPort: 80
+          FromPort: "{{ service.port }}"
           IpProtocol: tcp
-          ToPort: 80
+          ToPort: "{{ service.port }}"
       VpcId: !ImportValue network-VpcId
       Tags:
         - Key: Name
-          Value: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "webserver-external-security-group"]]
+          Value: "{{ serviceName }}-{{ ENVIRONMENT }}-webserver-security-group"
 
   WebserverInternalSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: Security group for Airflow webserver.
-      GroupName: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "webserver-internal-security-group"]]
+      GroupName: "{{ serviceName }}-{{ ENVIRONMENT }}-webserver-internal-security-group"
       SecurityGroupEgress:
         - CidrIp: 0.0.0.0/0
           FromPort: 0
@@ -31,35 +31,33 @@ Resources:
           ToPort: 0
       SecurityGroupIngress:
         - SourceSecurityGroupId: !GetAtt WebserverExternalSecurityGroup.GroupId
-          FromPort: 8080
+          FromPort: "{{ service.webserver.port }}"
           IpProtocol: tcp
-          ToPort: 8080
+          ToPort: "{{ service.webserver.port }}"
       VpcId: !ImportValue network-VpcId
       Tags:
         - Key: Name
-          Value: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "webserver-internal-security-group"]]
+          Value: "{{ serviceName }}-{{ ENVIRONMENT }}-webserver-internal-security-group"
 
   WebserverTaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
-      Cpu: 1024
-      Memory: 2048
+      Cpu: "{{ service.webserver.cpu }}"
+      Memory: "{{ service.webserver.memory }}"
       ExecutionRoleArn: !ImportValue iam-ECSTaskRoleArn
-      Family: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "webserver-task-definition"]]
+      Family: "{{ serviceName }}-{{ ENVIRONMENT }}-webserver-task-definition"
       NetworkMode: awsvpc
       RequiresCompatibilities:
         - FARGATE
       ContainerDefinitions:
-        - Name: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "webserver"]]
+        - Name: "{{ serviceName }}-{{ ENVIRONMENT }}-webserver"
           Image: !Sub
-            - "${AWS::AccountId}.dkr.ecr.${aws_region}.amazonaws.com/${ecr_repository}:${image_version}"
-            - aws_region: !ImportValue parameter-AwsRegion
-              ecr_repository: !ImportValue ecs-AirflowDockerRepositoryName
-              image_version: !ImportValue parameter-ImageVersion
+            - "${AWS::AccountId}.dkr.ecr.{{ AWS_REGION }}.amazonaws.com/${ecr_repository}:{{ service.imageVersion }}"
+            - ecr_repository: !ImportValue ecr-AirflowDockerRepositoryName
           Essential: true
           PortMappings:
-            - ContainerPort: 8080
-              HostPort: 8080
+            - ContainerPort: "{{ service.webserver.port }}"
+              HostPort: "{{ service.webserver.port }}"
           Command:
             - webserver
           Environment:
@@ -72,37 +70,35 @@ Resources:
             - Name: POSTGRES_PORT
               Value: !ImportValue database-AuroraDBClusterPort
             - Name: POSTGRES_USER
-              Value: !Join ['', ['{{resolve:secretsmanager:', !ImportValue secrets-AuroraDBSecretId, ':SecretString:username}}' ]]
+              Value: {% raw %} !Join ['', ['{{resolve:secretsmanager:', !ImportValue secrets-AuroraDBSecretId, ':SecretString:username}}' ]] {% endraw %}
             - Name: POSTGRES_PASSWORD
-              Value: !Join ['', ['{{resolve:secretsmanager:', !ImportValue secrets-AuroraDBSecretId, ':SecretString:password}}' ]]
+              Value: {% raw %} !Join ['', ['{{resolve:secretsmanager:', !ImportValue secrets-AuroraDBSecretId, ':SecretString:password}}' ]] {% endraw %}
             - Name: POSTGRES_DB
-              Value: !ImportValue parameter-ServiceName
+              Value: c
             - Name: AIRFLOW_BASE_URL
-              Value: !ImportValue parameter-AirflowBaseUrl
+              Value: "{{ service.baseUrl }}"
             - Name: ENABLE_REMOTE_LOGGING
               Value: False
             - Name: STAGE
-              Value: !ImportValue parameter-Environment
+              Value: "{{ ENVIRONMENT }}"
             - Name: FERNET_KEY
-              Value: !Join ['', ['{{resolve:secretsmanager:', !ImportValue secrets-AirflowFernetKeySecretId, ':SecretString:fernet_key}}' ]]
+              Value: {% raw %} !Join ['', ['{{resolve:secretsmanager:', !ImportValue secrets-AirflowFernetKeySecretId, ':SecretString:fernet_key}}' ]] {% endraw %}
           LogConfiguration:
             LogDriver: awslogs
             Options:
               awslogs-group: !Sub
-                - "${log_group}/${service}-${environment}"
+                - "${log_group}/{{ serviceName }}-{{ ENVIRONMENT }}"
                 - log_group: !ImportValue cloudwatch-AirflowECSLogGroupName
-                  service: !ImportValue parameter-ServiceName
-                  environment: !ImportValue parameter-Environment
-              awslogs-region: !ImportValue parameter-AwsRegion
+              awslogs-region: "{{ AWS_REGION }}"
               awslogs-stream-prefix: webserver
       Tags:
         - Key: Name
-          Value: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "webserver-task-definition"]]
+          Value: "{{ serviceName }}-{{ ENVIRONMENT }}-webserver-task-definition"
 
   WebserverAlb:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
-      Name: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "webserver-alb"]]
+      Name: "{{ serviceName }}-{{ ENVIRONMENT }}-webserver-alb"
       Type: application
       SecurityGroups:
         - !Ref WebserverExternalSecurityGroup
@@ -112,13 +108,13 @@ Resources:
         - !ImportValue network-PublicSubnet3Id
       Tags:
         - Key: Name
-          Value: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "webserver-alb"]]
+          Value: "{{ serviceName }}-{{ ENVIRONMENT }}-webserver-alb"
 
   WebserverAlbTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
-      Name: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "alb-tg"]]
-      Port: 8080
+      Name: "{{ serviceName }}-{{ ENVIRONMENT }}-webserver-alb-tg"
+      Port: "{{ service.webserver.port }}"
       Protocol: HTTP
       VpcId: !ImportValue network-VpcId
       TargetType: ip
@@ -132,7 +128,7 @@ Resources:
       UnhealthyThresholdCount: 3
       Tags:
         - Key: Name
-          Value: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "webserver-alb-target-group"]]
+          Value: "{{ serviceName }}-{{ ENVIRONMENT }}-webserver-alb-tg"
 
   WebserverAlbListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
@@ -141,5 +137,5 @@ Resources:
         - TargetGroupArn: !Ref WebserverAlbTargetGroup
           Type: forward
       LoadBalancerArn: !Ref WebserverAlb
-      Port: 80
+      Port: "{{ service.port }}"
       Protocol: HTTP
