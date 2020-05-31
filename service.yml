@@ -7,21 +7,75 @@ service:
   baseUrl: http://localhost:8080
   port: 80
   imageVersion: latest
+
   flower:
     cpu: 512
     memory: 1024
     port: 5555
+    desiredCount: 1
+    autoscaling:
+      maxCapacity: 2
+      minCapacity: 1
+      cpu:
+        target: 70
+        scaleInCooldown: 180
+        scaleOutCooldown: 60
+      memory:
+        target: 90
+        scaleInCooldown: 180
+        scaleOutCooldown: 60
+
   scheduler:
     cpu: 1024
     memory: 2048
+    desiredCount: 1
+    autoscaling:
+      maxCapacity: 2
+      minCapacity: 1
+      cpu:
+        target: 70
+        scaleInCooldown: 180
+        scaleOutCooldown: 60
+      memory:
+        target: 90
+        scaleInCooldown: 180
+        scaleOutCooldown: 60
+
   webserver:
     port: 8080
     cpu: 1024
     memory: 2048
+    desiredCount: 1
+    autoscaling:
+      maxCapacity: 3
+      minCapacity: 1
+      cpu:
+        target: 60
+        scaleInCooldown: 180
+        scaleOutCooldown: 60
+      memory:
+        target: 80
+        scaleInCooldown: 180
+        scaleOutCooldown: 60
+
   workers:
     port: 8793
     cpu: 1024
     memory: 2048
+    desiredCount: 2
+    autoscaling:
+      maxCapacity: 8
+      minCapacity: 2
+      cpu:
+        target: 70
+        scaleInCooldown: 60
+        scaleOutCooldown: 120
+      memory:
+        target: 70
+        scaleInCooldown: 60
+        scaleOutCooldown: 120
+
+
 
 publicSubnet:
   1:

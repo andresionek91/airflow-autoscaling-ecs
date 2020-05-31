@@ -1,3 +1,5 @@
+Description: Creates Airflow Scheduler Service
+
 Resources:
   SchedulerSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -66,3 +68,59 @@ Resources:
       Tags:
         - Key: Name
           Value: "{{ serviceName }}-{{ ENVIRONMENT }}-scheduler-task-definition"
+
+  SchedulerEcsService:
+    Type: AWS::ECS::Service
+    Properties:
+      ServiceName: "{{ serviceName }}-{{ ENVIRONMENT }}-scheduler"
+      Cluster: !ImportValue ecs-AirflowECSClusteArn
+      TaskDefinition: !Ref SchedulerTaskDefinition
+      LaunchType: FARGATE
+      DesiredCount: "{{ service.scheduler.desiredCount }}"
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: true
+          SecurityGroups:
+            - !Ref SchedulerSecurityGroup
+          Subnets:
+            - !ImportValue network-PublicSubnet1Id
+            - !ImportValue network-PublicSubnet2Id
+            - !ImportValue network-PublicSubnet3Id
+      EnableECSManagedTags: true
+      PropagateTags: TASK_DEFINITION
+
+  SchedulerScalableTarget:
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
+    Properties:
+      MaxCapacity: "{{ service.scheduler.autoscaling.maxCapacity }}"
+      MinCapacity: "{{ service.scheduler.autoscaling.minCapacity }}"
+      RoleARN: !Sub 'arn:aws:iam::${AWS::AccountId}:role/aws-service-role/ecs.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_ECSService'
+      ServiceNamespace: ecs
+      ScalableDimension: 'ecs:service:DesiredCount'
+      ResourceId: !Join ["/", [service, !ImportValue ecs-AirflowECSClusterId, !GetAtt SchedulerEcsService.Name]]
+
+  ServiceScalingPolicyCPU:
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Properties:
+      PolicyName: "{{ serviceName }}-{{ ENVIRONMENT }}-scheduler-tracking-cpu"
+      PolicyType: TargetTrackingScaling
+      ScalingTargetId: !Ref SchedulerScalableTarget
+      TargetTrackingScalingPolicyConfiguration:
+        TargetValue: "{{ service.scheduler.autoscaling.cpu.target }}"
+        ScaleInCooldown: "{{ service.scheduler.autoscaling.cpu.scaleInCooldown }}"
+        ScaleOutCooldown: "{{ service.scheduler.autoscaling.cpu.scaleOutCooldown }}"
+        PredefinedMetricSpecification:
+          PredefinedMetricType: ECSServiceAverageCPUUtilization
+
+  ServiceScalingPolicyMem:
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Properties:
+      PolicyName: "{{ serviceName }}-{{ ENVIRONMENT }}-scheduler-tracking-memory"
+      PolicyType: TargetTrackingScaling
+      ScalingTargetId: !Ref FlowerScalableTarget
+      TargetTrackingScalingPolicyConfiguration:
+        TargetValue: "{{ service.scheduler.autoscaling.memory.target }}"
+        ScaleInCooldown: "{{ service.scheduler.autoscaling.memory.scaleInCooldown }}"
+        ScaleOutCooldown: "{{ service.scheduler.autoscaling.memory.scaleOutCooldown }}"
+        PredefinedMetricSpecification:
+          PredefinedMetricType: ECSServiceAverageMemoryUtilization

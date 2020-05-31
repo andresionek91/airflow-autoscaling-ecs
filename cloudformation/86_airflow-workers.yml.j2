@@ -1,3 +1,5 @@
+Description: Creates Airflow Workers Service
+
 Resources:
   workerSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -74,3 +76,59 @@ Resources:
       Tags:
         - Key: Name
           Value: "{{ serviceName }}-{{ ENVIRONMENT }}-workers-task-definition"
+
+  WorkersEcsService:
+    Type: AWS::ECS::Service
+    Properties:
+      ServiceName: "{{ serviceName }}-{{ ENVIRONMENT }}-workers"
+      Cluster: !ImportValue ecs-AirflowECSClusteArn
+      TaskDefinition: !Ref WorkerTaskDefinition
+      LaunchType: FARGATE
+      DesiredCount: "{{ service.workers.desiredCount }}"
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: true
+          SecurityGroups:
+            - !Ref WorkerSecurityGroup
+          Subnets:
+            - !ImportValue network-PublicSubnet1Id
+            - !ImportValue network-PublicSubnet2Id
+            - !ImportValue network-PublicSubnet3Id
+      EnableECSManagedTags: true
+      PropagateTags: TASK_DEFINITION
+
+  WorkersScalableTarget:
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
+    Properties:
+      MaxCapacity: "{{ service.workers.autoscaling.maxCapacity }}"
+      MinCapacity: "{{ service.workers.autoscaling.minCapacity }}"
+      RoleARN: !Sub 'arn:aws:iam::${AWS::AccountId}:role/aws-service-role/ecs.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_ECSService'
+      ServiceNamespace: ecs
+      ScalableDimension: 'ecs:service:DesiredCount'
+      ResourceId: !Join ["/", [service, !ImportValue ecs-AirflowECSClusterId, !GetAtt WorkersEcsService.Name]]
+
+  ServiceScalingPolicyCPU:
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Properties:
+      PolicyName: "{{ serviceName }}-{{ ENVIRONMENT }}-workers-tracking-cpu"
+      PolicyType: TargetTrackingScaling
+      ScalingTargetId: !Ref WorkersScalableTarget
+      TargetTrackingScalingPolicyConfiguration:
+        TargetValue: "{{ service.workers.autoscaling.cpu.target }}"
+        ScaleInCooldown: "{{ service.workers.autoscaling.cpu.scaleInCooldown }}"
+        ScaleOutCooldown: "{{ service.workers.autoscaling.cpu.scaleOutCooldown }}"
+        PredefinedMetricSpecification:
+          PredefinedMetricType: ECSServiceAverageCPUUtilization
+
+  ServiceScalingPolicyMem:
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Properties:
+      PolicyName: "{{ serviceName }}-{{ ENVIRONMENT }}-workers-tracking-memory"
+      PolicyType: TargetTrackingScaling
+      ScalingTargetId: !Ref WorkersScalableTarget
+      TargetTrackingScalingPolicyConfiguration:
+        TargetValue: "{{ service.workers.autoscaling.memory.target }}"
+        ScaleInCooldown: "{{ service.workers.autoscaling.memory.scaleInCooldown }}"
+        ScaleOutCooldown: "{{ service.workers.autoscaling.memory.scaleOutCooldown }}"
+        PredefinedMetricSpecification:
+          PredefinedMetricType: ECSServiceAverageMemoryUtilization

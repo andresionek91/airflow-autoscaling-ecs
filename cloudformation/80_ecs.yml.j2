@@ -8,3 +8,14 @@ Resources:
       Tags:
         - Key: Name
           Value: "{{ serviceName }}-{{ ENVIRONMENT }}-ecs-cluster"
+
+Outputs:
+  AirflowECSClusteArn:
+    Value: !GetAtt AirflowECSCluster.Arn
+    Export:
+      Name: "ecs-AirflowECSClusteArn"
+
+  AirflowECSClusteId:
+    Value: !Ref AirflowECSCluster
+    Export:
+      Name: "ecs-AirflowECSClusterId"
