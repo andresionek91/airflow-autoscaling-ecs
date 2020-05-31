@@ -54,7 +54,7 @@ Resources:
       ContainerDefinitions:
         - Name: "{{ serviceName }}-{{ ENVIRONMENT }}-webserver"
           Image: !Sub
-            - "${AWS::AccountId}.dkr.ecr.{{ AWS_REGION }}.amazonaws.com/${ecr_repository}:{{ service.imageVersion }}"
+            - "${AWS::AccountId}.dkr.ecr.{{ AWS_REGION }}.amazonaws.com/${ecr_repository}:latest"
             - ecr_repository: !ImportValue ecr-AirflowDockerRepositoryName
           Essential: true
           PortMappings:
@@ -68,15 +68,15 @@ Resources:
             - Name: REDIS_PORT
               Value: !ImportValue redis-CeleryBackendPort
             - Name: POSTGRES_HOST
-              Value: !ImportValue database-AuroraDBClusterHost
+              Value: !ImportValue database-MetadataDBInstanceHost
             - Name: POSTGRES_PORT
-              Value: !ImportValue database-AuroraDBClusterPort
+              Value: !ImportValue database-MetadataDBInstancePort
             - Name: POSTGRES_USER
-              Value: {% raw %} !Join ['', ['{{resolve:secretsmanager:', !ImportValue secrets-AuroraDBSecretId, ':SecretString:username}}' ]] {% endraw %}
+              Value: {% raw %} !Join ['', ['{{resolve:secretsmanager:', !ImportValue secrets-MetadataDBSecretId, ':SecretString:username}}' ]] {% endraw %}
             - Name: POSTGRES_PASSWORD
-              Value: {% raw %} !Join ['', ['{{resolve:secretsmanager:', !ImportValue secrets-AuroraDBSecretId, ':SecretString:password}}' ]] {% endraw %}
+              Value: {% raw %} !Join ['', ['{{resolve:secretsmanager:', !ImportValue secrets-MetadataDBSecretId, ':SecretString:password}}' ]] {% endraw %}
             - Name: POSTGRES_DB
-              Value: c
+              Value: "{{ metadataDb.dbName }}"
             - Name: AIRFLOW_BASE_URL
               Value: "{{ service.baseUrl }}"
             - Name: ENABLE_REMOTE_LOGGING

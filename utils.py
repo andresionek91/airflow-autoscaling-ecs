@@ -5,9 +5,11 @@ import boto3
 from cryptography.fernet import Fernet
 import logging
 import json
-
+import sys
+from uuid import uuid4
 
 logging.basicConfig(level=logging.INFO)
+logging.getLogger('botocore').setLevel(logging.CRITICAL)
 
 
 def _get_abs_path(path):
@@ -50,3 +52,13 @@ def create_default_tags():
         ]'''
     tags = json.loads(render_template(tags_template))
     return tags
+
+
+def get_aws_account_id():
+    client = boto3.client("sts")
+    account_id = client.get_caller_identity()["Account"]
+    sys.exit(account_id)
+
+
+def generate_hash(n):
+    sys.exit(uuid4().hex[:n])

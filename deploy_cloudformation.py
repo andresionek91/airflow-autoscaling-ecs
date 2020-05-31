@@ -65,7 +65,7 @@ def update_stack(stack_name, template_body, **kwargs):
             StackName=stack_name,
             Capabilities=['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
             TemplateBody=template_body,
-            Tags=create_default_tags() if 'airflow' not in stack_name else []
+            Tags=create_default_tags() if 'airflow' in stack_name else []
         )
 
     except ClientError as e:
@@ -89,7 +89,7 @@ def create_stack(stack_name, template_body, **kwargs):
         Capabilities=['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
         TimeoutInMinutes=30,
         OnFailure='ROLLBACK',
-        Tags=create_default_tags() if 'airflow' not in stack_name else []
+        Tags=create_default_tags() if 'airflow' in stack_name else []
     )
 
     cloudformation_client.get_waiter('stack_create_complete').wait(
@@ -101,8 +101,16 @@ def create_stack(stack_name, template_body, **kwargs):
     logging.info(f'CREATE COMPLETE')
 
 
-def create_or_update_stacks():
+def filter_infra_templates(cf_templates, is_foundation):
+    if is_foundation:
+        return [x for x in cf_templates if 'airflow' not in x['stack_name']]
+    else:
+        return [x for x in cf_templates if 'airflow' in x['stack_name']]
+
+
+def create_or_update_stacks(is_foundation):
     cf_templates = get_cloudformation_templates()
+    cf_templates = filter_infra_templates(cf_templates, is_foundation)
     existing_stacks = get_existing_stacks()
 
     for cf_template in cf_templates:

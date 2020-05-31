@@ -6,7 +6,6 @@ service:
   cidrBlock: 10.0.0.0
   baseUrl: http://localhost:8080
   port: 80
-  imageVersion: latest
   flower:
     cpu: 512
     memory: 1024
@@ -86,14 +85,12 @@ metadataDb:
   instanceType: db.t3.micro
   port: 5432
   dbName: airflow
-  engine: aurora-postgresql
-  engineMode: provisioned
+  engine: postgres
   engineVersion: 11.7
-  family: aurora-postgresql11
+  family: postgresql11
   deletionProtection: false
-  enableHttpEndpoint: true
-  storageEncrypted: true
   enableIAMDatabaseAuthentication: true
+  allocatedStorage: 20
   secrets:
     rotationScheduleDays: 30
   parameters:

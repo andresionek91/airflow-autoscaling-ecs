@@ -6,6 +6,7 @@ All infrastructure is created with Cloudformation and Secrets are managed by AWS
 ## Requirements
 * Create an AWS IAM User for the infrastructure deployment, with admin permissions
 * Install AWS CLI running `pip install awscli`
+* Install Docker
 * Setup your IAM User credentials inside `~/.aws/config`
 ```
     [profile my_aws_profile]
@@ -24,12 +25,12 @@ All infrastructure is created with Cloudformation and Secrets are managed by AWS
 ## Deploy Airflow on AWS ECS
 To deploy or update your stack run the following command:
 ```shell script
-make cloudformation-deploy
+make airflow-deploy
 ```
 
 To destroy your stack run the following command:
 ```shell script
-make cloudformation-destroy
+make airflow-destroy
 ```
 
 ## Features
@@ -65,14 +66,12 @@ metadataDb:
   instanceType: db.t3.micro
   port: 5432
   dbName: airflow
-  engine: aurora-postgresql
-  engineMode: provisioned
+  engine: postgres
   engineVersion: 11.7
-  family: aurora-postgresql11
+  family: postgresql11
   deletionProtection: false
-  enableHttpEndpoint: true
-  storageEncrypted: true
   enableIAMDatabaseAuthentication: true
+  allocatedStorage: 20
   secrets:
     rotationScheduleDays: 30
   parameters:

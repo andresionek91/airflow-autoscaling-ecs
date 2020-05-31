@@ -2,11 +2,11 @@ Description: Creates Airflow Metadata DB with credential managed by AWS secrets
 
 Resources:
 
-  AuroraPublicSecurityGroup:
+  MetadataDBPublicSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: Security group for Aurora Metadata DB. Public access
-      GroupName: "{{ serviceName }}-{{ ENVIRONMENT }}-aurora-public-security-group"
+      GroupDescription: Security group for Postgres Metadata DB. Public access
+      GroupName: "{{ serviceName }}-{{ ENVIRONMENT }}-postgres-public-security-group"
       SecurityGroupEgress:
         - CidrIp: 0.0.0.0/0
           FromPort: "{{ metadataDb.port }}"
@@ -24,85 +24,83 @@ Resources:
       VpcId: !ImportValue network-VpcId
       Tags:
         - Key: Name
-          Value: "{{ serviceName }}-{{ ENVIRONMENT }}-aurora-public-security-group"
+          Value: "{{ serviceName }}-{{ ENVIRONMENT }}-postgres-public-security-group"
 
-  AuroraDBSubnetGroup:
+  MetadataDBSubnetGroup:
     Type: AWS::RDS::DBSubnetGroup
     Properties:
-      DBSubnetGroupDescription: Posttgres Metadata DB Subnet Group
-      DBSubnetGroupName: "{{ serviceName }}-{{ ENVIRONMENT }}-aurora-db-subnet-group"
+      DBSubnetGroupDescription: Postgres Metadata DB Subnet Group
+      DBSubnetGroupName: "{{ serviceName }}-{{ ENVIRONMENT }}-postgres-db-subnet-group"
       SubnetIds:
         - !ImportValue network-PublicSubnet1Id
         - !ImportValue network-PublicSubnet2Id
         - !ImportValue network-PublicSubnet3Id
       Tags:
         - Key: Name
-          Value: "{{ serviceName }}-{{ ENVIRONMENT }}-aurora-db-subnet-group"
+          Value: "{{ serviceName }}-{{ ENVIRONMENT }}-postgres-db-subnet-group"
 
-  AuroraDBCluster:
-    Type: AWS::RDS::DBCluster
+  MetadataDBInstance:
+    Type: AWS::RDS::DBInstance
     Properties:
-      AvailabilityZones:
-        - "{{ AWS_REGION }}{{ publicSubnet.1.availabilityZone }}"
-        - "{{ AWS_REGION }}{{ publicSubnet.2.availabilityZone }}"
-        - "{{ AWS_REGION }}{{ publicSubnet.3.availabilityZone }}"
+      AllocatedStorage: "{{ metadataDb.allocatedStorage }}"
+      AvailabilityZone: "{{ AWS_REGION }}{{ publicSubnet.1.availabilityZone }}"
       BackupRetentionPeriod: 7
-      DatabaseName: "{{ metadataDb.dbName }}"
-      DBClusterIdentifier: "{{ serviceName }}-{{ ENVIRONMENT }}-aurora-cluster"
-      DBClusterParameterGroupName: !Ref AuroraDBParameterGroup
-      DBSubnetGroupName: !Ref AuroraDBSubnetGroup
+      DBName: "{{ metadataDb.dbName }}"
+      DBInstanceIdentifier: "{{ serviceName }}-{{ ENVIRONMENT }}-metadata-bd-cluster"
+      DBParameterGroupName: !Ref MetadataDBParameterGroup
+      DBSubnetGroupName: !Ref MetadataDBSubnetGroup
       DeletionProtection: "{{ metadataDb.deletionProtection }}"
-      EnableHttpEndpoint: "{{ metadataDb.enableHttpEndpoint }}"
       EnableIAMDatabaseAuthentication: "{{ metadataDb.enableIAMDatabaseAuthentication }}"
       Engine: "{{ metadataDb.engine }}"
-      EngineMode: "{{ metadataDb.engineMode }}"
       EngineVersion: "{{ metadataDb.engineVersion }}"
+      PubliclyAccessible: true
       KmsKeyId: !ImportValue encryption-KMSKeyId
-      MasterUsername: {% raw %} !Join ['', ['{{resolve:secretsmanager:', !ImportValue secrets-AuroraDBSecretId, ':SecretString:username}}' ]] {% endraw %}
-      MasterUserPassword: {% raw %} !Join ['', ['{{resolve:secretsmanager:', !ImportValue secrets-AuroraDBSecretId, ':SecretString:password}}' ]] {% endraw %}
+      MasterUsername: {% raw %} !Join ['', ['{{resolve:secretsmanager:', !ImportValue secrets-MetadataDBSecretId, ':SecretString:username}}' ]] {% endraw %}
+      MasterUserPassword: {% raw %} !Join ['', ['{{resolve:secretsmanager:', !ImportValue secrets-MetadataDBSecretId, ':SecretString:password}}' ]] {% endraw %}
       Port: "{{ metadataDb.port }}"
       SourceRegion: "{{ AWS_REGION }}"
-      StorageEncrypted: "{{ metadataDb.storageEncrypted }}"
-      VpcSecurityGroupIds:
-        - !Ref AuroraPublicSecurityGroup
+      StorageEncrypted: true
+      VPCSecurityGroups:
+        - !Ref MetadataDBPublicSecurityGroup
       Tags:
         - Key: Name
-          Value: "{{ serviceName }}-{{ ENVIRONMENT }}-aurora-cluster"
+          Value: "{{ serviceName }}-{{ ENVIRONMENT }}-metadata-db"
 
-  AuroraDBParameterGroup:
-    Type: AWS::RDS::DBClusterParameterGroup
+  MetadataDBParameterGroup:
+    Type:  AWS::RDS::DBParameterGroup
     Properties:
-      Description: Aurora Metadata DB Parameter Group
+      Description: Metadata DB Parameter Group
       Family: "{{ metadataDb.family }}"
       Parameters:
         max_connections: "{{ metadataDb.parameters.maxConnections }}"
       Tags:
         - Key: Name
-          Value: "{{ serviceName }}-{{ ENVIRONMENT }}-aurora-db-parameter-group"
+          Value: "{{ serviceName }}-{{ ENVIRONMENT }}-metadata-db-parameter-group"
 
-  SecretAuroraDBAttachment:
+
+  SecretMetadataDBAttachment:
     Type: AWS::SecretsManager::SecretTargetAttachment
     Properties:
-      SecretId: !ImportValue secrets-AuroraDBSecretId
-      TargetId: !Ref AuroraDBCluster
+      SecretId: !ImportValue secrets-MetadataDBSecretId
+      TargetId: !Ref MetadataDBInstance
       TargetType: AWS::RDS::DBCluster
 
-  AuroraDBSecretRotationSchedule:
+  MetadataDBSecretRotationSchedule:
     Type: AWS::SecretsManager::RotationSchedule
-    DependsOn: SecretAuroraDBAttachment
+    DependsOn: SecretMetadataDBAttachment
     Properties:
-      SecretId: !ImportValue secrets-AuroraDBSecretId
+      SecretId: !ImportValue secrets-MetadataDBSecretId
       RotationLambdaARN: !ImportValue secrets-SecretRotationLambdaArn
       RotationRules:
         AutomaticallyAfterDays: "{{ metadataDb.secrets.rotationScheduleDays }}"
 
 Outputs:
-  AuroraDBClusterHost:
-    Value: !GetAtt AuroraDBCluster.Endpoint.Address
+  MetadataDBHost:
+    Value: !GetAtt MetadataDBInstance.Endpoint.Address
     Export:
-      Name: database-AuroraDBClusterHost
+      Name: database-MetadataDBInstanceHost
 
-  AuroraDBClusterPort:
-    Value: !GetAtt AuroraDBCluster.Endpoint.Port
+  MetadataDBPort:
+    Value: !GetAtt MetadataDBInstance.Endpoint.Port
     Export:
-      Name: database-AuroraDBClusterPort
+      Name: database-MetadataDBInstancePort
