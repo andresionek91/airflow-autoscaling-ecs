@@ -48,7 +48,7 @@ Resources:
       DBClusterIdentifier: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "aurora-cluster"]]
       DBClusterParameterGroupName: !Ref AuroraDBParameterGroup
       DBSubnetGroupName: !Ref AuroraDBSubnetGroup
-      DeletionProtection: true
+      DeletionProtection: false
       EnableHttpEndpoint: true
       EnableIAMDatabaseAuthentication: true
       Engine: aurora-postgresql
