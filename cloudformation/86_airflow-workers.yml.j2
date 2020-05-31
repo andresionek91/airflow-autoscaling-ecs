@@ -94,8 +94,6 @@ Resources:
             - !ImportValue network-PublicSubnet1Id
             - !ImportValue network-PublicSubnet2Id
             - !ImportValue network-PublicSubnet3Id
-      EnableECSManagedTags: true
-      PropagateTags: TASK_DEFINITION
 
   WorkersScalableTarget:
     Type: AWS::ApplicationAutoScaling::ScalableTarget
@@ -106,6 +104,9 @@ Resources:
       ServiceNamespace: ecs
       ScalableDimension: 'ecs:service:DesiredCount'
       ResourceId: !Join ["/", [service, !ImportValue ecs-AirflowECSClusterId, !GetAtt WorkersEcsService.Name]]
+      Tags:
+        - Key: Name
+          Value: "{{ serviceName }}-{{ ENVIRONMENT }}-workers-scalable-target"
 
   ServiceScalingPolicyCPU:
     Type: AWS::ApplicationAutoScaling::ScalingPolicy
@@ -119,8 +120,11 @@ Resources:
         ScaleOutCooldown: "{{ service.workers.autoscaling.cpu.scaleOutCooldown }}"
         PredefinedMetricSpecification:
           PredefinedMetricType: ECSServiceAverageCPUUtilization
+      Tags:
+        - Key: Name
+          Value: "{{ serviceName }}-{{ ENVIRONMENT }}-workers-scaling-policy-cpu"
 
-  ServiceScalingPolicyMem:
+  ServiceScalingPolicyMemory:
     Type: AWS::ApplicationAutoScaling::ScalingPolicy
     Properties:
       PolicyName: "{{ serviceName }}-{{ ENVIRONMENT }}-workers-tracking-memory"
@@ -132,3 +136,6 @@ Resources:
         ScaleOutCooldown: "{{ service.workers.autoscaling.memory.scaleOutCooldown }}"
         PredefinedMetricSpecification:
           PredefinedMetricType: ECSServiceAverageMemoryUtilization
+      Tags:
+        - Key: Name
+          Value: "{{ serviceName }}-{{ ENVIRONMENT }}-workers-scaling-policy-memory"
