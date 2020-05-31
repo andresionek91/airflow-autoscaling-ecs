@@ -5,31 +5,18 @@ import logging
 from zipfile import ZipFile
 from botocore.exceptions import ClientError
 from tempfile import NamedTemporaryFile
-from cryptography.fernet import Fernet
-from jinja2 import Template
-from yaml import safe_load
 
-
-class StackFailed(Exception):
-    pass
-
+from utils import _get_abs_path
+from utils import render_template
+from utils import create_fernet_key
+from utils import create_default_tags
 
 logging.basicConfig(level=logging.INFO)
 cloudformation_client = boto3.client('cloudformation')
 cloudformation_resource = boto3.resource('cloudformation')
-
 s3_client = boto3.client('s3')
 
-
-def _get_abs_path(path):
-    return os.path.join(os.path.dirname(os.path.realpath(__file__)), path)
-
-
-def render_yml_file_template(template):
-    with open(_get_abs_path("service.yml")) as f:
-        service_config = safe_load(f)
-
-    return Template(template).render({**service_config, **dict(os.environ)})
+create_fernet_key()
 
 
 def get_cloudformation_templates(reverse=False):
@@ -41,7 +28,7 @@ def get_cloudformation_templates(reverse=False):
         with open(path) as f:
             template_body = f.read()
         logging.info(f'Rendering template {filename}')
-        template_body = render_yml_file_template(template_body)
+        template_body = render_template(template_body)
         cf_template = {
             'stack_name': 'cfn-' + re.search('(?<=_)(.*)(?=.yml.j2)', filename).group(1),
             'template_body': template_body,
@@ -49,8 +36,6 @@ def get_cloudformation_templates(reverse=False):
          }
         cf_templates.append(cf_template)
     return cf_templates
-
-get_cloudformation_templates()
 
 
 def validate_templates():
@@ -77,7 +62,9 @@ def update_stack(stack_name, template_body, **kwargs):
             StackName=stack_name,
             Capabilities=['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
             TemplateBody=template_body,
+            Tags=create_default_tags()
         )
+
     except ClientError as e:
         if 'No updates are to be performed' in str(e):
             logging.info(f'SKIPPING UPDATE: No updates to be performed at stack {stack_name}')
@@ -99,6 +86,7 @@ def create_stack(stack_name, template_body, **kwargs):
         Capabilities=['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
         TimeoutInMinutes=30,
         OnFailure='ROLLBACK',
+        Tags=create_default_tags()
     )
 
     cloudformation_client.get_waiter('stack_create_complete').wait(
@@ -115,7 +103,6 @@ def create_or_update_stacks():
     existing_stacks = get_existing_stacks()
 
     for cf_template in cf_templates:
-        cf_template = create_fernet_key(cf_template)
         if cf_template['stack_name'] in existing_stacks:
             logging.info('UPDATING STACK {stack_name}'.format(**cf_template))
             update_stack(**cf_template)
@@ -157,14 +144,6 @@ def copy_rotate_lambda_functions_to_s3(stack_name):
             Key=f'{filename}/lambda_function.zip',
             Body=temp_file
         )
-
-
-def create_fernet_key(cf_template):
-    if cf_template['stack_name'] == 'cfn-secrets':
-        fernet_key = Fernet.generate_key().decode()
-        cf_template['template_body'] = cf_template['template_body'].replace('{{FERNET_KEY}}', fernet_key)
-        logging.info('New FERNET KEY created. It will be uploaded to Secret Manager')
-    return cf_template
 
 
 def destroy_stacks():
