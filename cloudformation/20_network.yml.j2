@@ -5,6 +5,8 @@ Resources:
     Type: AWS::EC2::VPC
     Properties:
       CidrBlock: "{{ service.cidrBlock }}/16"
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
       Tags:
         - Key: Name
           Value: "{{ serviceName }}-{{ ENVIRONMENT }}-vpc"
@@ -29,6 +31,13 @@ Resources:
       Tags:
         - Key: Name
           Value: "{{ serviceName }}-{{ ENVIRONMENT }}-public-route-table"
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+      RouteTableId: !Ref PublicRouteTable
 
   PublicSubnet1:
     Type: AWS::EC2::Subnet

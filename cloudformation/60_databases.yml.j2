@@ -6,7 +6,7 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: Security group for Postgres Metadata DB. Public access
-      GroupName: "{{ serviceName }}-{{ ENVIRONMENT }}-postgres-public-security-group"
+      GroupName: "{{ serviceName }}-{{ ENVIRONMENT }}-metadata-db-public-security-group"
       SecurityGroupEgress:
         - CidrIp: 0.0.0.0/0
           FromPort: "{{ metadataDb.port }}"
@@ -24,20 +24,20 @@ Resources:
       VpcId: !ImportValue network-VpcId
       Tags:
         - Key: Name
-          Value: "{{ serviceName }}-{{ ENVIRONMENT }}-postgres-public-security-group"
+          Value: "{{ serviceName }}-{{ ENVIRONMENT }}-metadata-db-public-security-group"
 
   MetadataDBSubnetGroup:
     Type: AWS::RDS::DBSubnetGroup
     Properties:
       DBSubnetGroupDescription: Postgres Metadata DB Subnet Group
-      DBSubnetGroupName: "{{ serviceName }}-{{ ENVIRONMENT }}-postgres-db-subnet-group"
+      DBSubnetGroupName: "{{ serviceName }}-{{ ENVIRONMENT }}-metadata-db-subnet-group"
       SubnetIds:
         - !ImportValue network-PublicSubnet1Id
         - !ImportValue network-PublicSubnet2Id
         - !ImportValue network-PublicSubnet3Id
       Tags:
         - Key: Name
-          Value: "{{ serviceName }}-{{ ENVIRONMENT }}-postgres-db-subnet-group"
+          Value: "{{ serviceName }}-{{ ENVIRONMENT }}-metadata-db-subnet-group"
 
   MetadataDBInstance:
     Type: AWS::RDS::DBInstance
@@ -46,7 +46,8 @@ Resources:
       AvailabilityZone: "{{ AWS_REGION }}{{ publicSubnet.1.availabilityZone }}"
       BackupRetentionPeriod: 7
       DBName: "{{ metadataDb.dbName }}"
-      DBInstanceIdentifier: "{{ serviceName }}-{{ ENVIRONMENT }}-metadata-bd-cluster"
+      DBInstanceIdentifier: "{{ serviceName }}-{{ ENVIRONMENT }}-metadata-db-cluster"
+      DBInstanceClass: "{{ metadataDb.instanceType }}"
       DBParameterGroupName: !Ref MetadataDBParameterGroup
       DBSubnetGroupName: !Ref MetadataDBSubnetGroup
       DeletionProtection: "{{ metadataDb.deletionProtection }}"
@@ -78,21 +79,13 @@ Resources:
           Value: "{{ serviceName }}-{{ ENVIRONMENT }}-metadata-db-parameter-group"
 
 
-  SecretMetadataDBAttachment:
+  MetadataDBSecretAttachment:
     Type: AWS::SecretsManager::SecretTargetAttachment
     Properties:
       SecretId: !ImportValue secrets-MetadataDBSecretId
       TargetId: !Ref MetadataDBInstance
-      TargetType: AWS::RDS::DBCluster
+      TargetType: AWS::RDS::DBInstance
 
-  MetadataDBSecretRotationSchedule:
-    Type: AWS::SecretsManager::RotationSchedule
-    DependsOn: SecretMetadataDBAttachment
-    Properties:
-      SecretId: !ImportValue secrets-MetadataDBSecretId
-      RotationLambdaARN: !ImportValue secrets-SecretRotationLambdaArn
-      RotationRules:
-        AutomaticallyAfterDays: "{{ metadataDb.secrets.rotationScheduleDays }}"
 
 Outputs:
   MetadataDBHost:

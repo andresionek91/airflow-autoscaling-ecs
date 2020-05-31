@@ -88,9 +88,7 @@ Resources:
           LogConfiguration:
             LogDriver: awslogs
             Options:
-              awslogs-group: !Sub
-                - "${log_group}/{{ serviceName }}-{{ ENVIRONMENT }}"
-                - log_group: !ImportValue cloudwatch-AirflowECSLogGroupName
+              awslogs-group: !ImportValue cloudwatch-AirflowECSLogGroupName
               awslogs-region: "{{ AWS_REGION }}"
               awslogs-stream-prefix: webserver
       Tags:

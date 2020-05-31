@@ -53,7 +53,7 @@ def validate_templates():
 
 def get_existing_stacks():
     response = cloudformation_client.list_stacks(
-        StackStatusFilter=['CREATE_COMPLETE', 'UPDATE_COMPLETE']
+        StackStatusFilter=['CREATE_COMPLETE', 'UPDATE_COMPLETE', 'UPDATE_ROLLBACK_COMPLETE']
     )
 
     return [stack['StackName'] for stack in response['StackSummaries']]
@@ -65,7 +65,7 @@ def update_stack(stack_name, template_body, **kwargs):
             StackName=stack_name,
             Capabilities=['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
             TemplateBody=template_body,
-            Tags=create_default_tags() if 'airflow' in stack_name else []
+            Tags=create_default_tags()
         )
 
     except ClientError as e:
@@ -89,7 +89,7 @@ def create_stack(stack_name, template_body, **kwargs):
         Capabilities=['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
         TimeoutInMinutes=30,
         OnFailure='ROLLBACK',
-        Tags=create_default_tags() if 'airflow' in stack_name else []
+        Tags=create_default_tags()
     )
 
     cloudformation_client.get_waiter('stack_create_complete').wait(
@@ -120,41 +120,6 @@ def create_or_update_stacks(is_foundation):
         else:
             logging.info('CREATING STACK {stack_name}'.format(**cf_template))
             create_stack(**cf_template)
-
-        copy_rotate_lambda_functions_to_s3(cf_template['stack_name'])
-
-
-def copy_rotate_lambda_functions_to_s3(stack_name):
-    stack = cloudformation_resource.Stack(stack_name)
-
-    if not stack.outputs:
-        return
-
-    bucket_output = [output for output in stack.outputs if output['ExportName'] == 'storage-RotationLambdaCodeBucketName']
-
-    if not bucket_output:
-        return
-
-    bucket_name = bucket_output[0]['OutputValue']
-
-    lambdas = os.listdir(_get_abs_path("lambda"))
-    for lambdaf in lambdas:
-        path = _get_abs_path("lambda") + "/" + lambdaf
-        filename = re.search('(.*)(?=.py)', lambdaf).group(1)
-        logging.info(f'Copying lambda function {filename} to s3 {bucket_name}')
-
-        with open(path) as f:
-            buffer = f.read()
-
-        temp_file = NamedTemporaryFile()
-        with ZipFile(temp_file.name, 'w') as zip:
-            zip.writestr(lambdaf, buffer)
-
-        s3_client.put_object(
-            Bucket=bucket_name,
-            Key=f'{filename}/lambda_function.zip',
-            Body=temp_file
-        )
 
 
 def destroy_stacks():

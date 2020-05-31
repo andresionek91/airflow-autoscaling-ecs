@@ -87,7 +87,7 @@ metadataDb:
   dbName: airflow
   engine: postgres
   engineVersion: 11.7
-  family: postgresql11
+  family: postgres11
   deletionProtection: false
   enableIAMDatabaseAuthentication: true
   allocatedStorage: 20
