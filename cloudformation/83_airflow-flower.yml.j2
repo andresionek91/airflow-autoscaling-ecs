@@ -102,9 +102,7 @@ Resources:
       ServiceNamespace: ecs
       ScalableDimension: 'ecs:service:DesiredCount'
       ResourceId: !Join ["/", [service, !ImportValue ecs-AirflowECSClusterId, !GetAtt FlowerEcsService.Name]]
-      Tags:
-        - Key: Name
-          Value: "{{ serviceName }}-{{ ENVIRONMENT }}-flower-scalable-target"
+
 
   ServiceScalingPolicyCPU:
     Type: AWS::ApplicationAutoScaling::ScalingPolicy
@@ -118,9 +116,6 @@ Resources:
         ScaleOutCooldown: "{{ service.flower.autoscaling.cpu.scaleOutCooldown }}"
         PredefinedMetricSpecification:
           PredefinedMetricType: ECSServiceAverageCPUUtilization
-      Tags:
-        - Key: Name
-          Value: "{{ serviceName }}-{{ ENVIRONMENT }}-flower-scaling-policy-cpu"
 
   ServiceScalingPolicyMemory:
     Type: AWS::ApplicationAutoScaling::ScalingPolicy
@@ -134,6 +129,3 @@ Resources:
         ScaleOutCooldown: "{{ service.flower.autoscaling.memory.scaleOutCooldown }}"
         PredefinedMetricSpecification:
           PredefinedMetricType: ECSServiceAverageMemoryUtilization
-      Tags:
-        - Key: Name
-          Value: "{{ serviceName }}-{{ ENVIRONMENT }}-flower-scaling-policy-memory"

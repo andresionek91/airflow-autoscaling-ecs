@@ -94,9 +94,7 @@ Resources:
       ServiceNamespace: ecs
       ScalableDimension: 'ecs:service:DesiredCount'
       ResourceId: !Join ["/", [service, !ImportValue ecs-AirflowECSClusterId, !GetAtt SchedulerEcsService.Name]]
-      Tags:
-        - Key: Name
-          Value: "{{ serviceName }}-{{ ENVIRONMENT }}-scheduler-scalable-target"
+
 
   ServiceScalingPolicyCPU:
     Type: AWS::ApplicationAutoScaling::ScalingPolicy
@@ -110,9 +108,6 @@ Resources:
         ScaleOutCooldown: "{{ service.scheduler.autoscaling.cpu.scaleOutCooldown }}"
         PredefinedMetricSpecification:
           PredefinedMetricType: ECSServiceAverageCPUUtilization
-      Tags:
-        - Key: Name
-          Value: "{{ serviceName }}-{{ ENVIRONMENT }}-scheduler-scaling-policy-cpu"
 
   ServiceScalingPolicyMemory:
     Type: AWS::ApplicationAutoScaling::ScalingPolicy
@@ -126,6 +121,3 @@ Resources:
         ScaleOutCooldown: "{{ service.scheduler.autoscaling.memory.scaleOutCooldown }}"
         PredefinedMetricSpecification:
           PredefinedMetricType: ECSServiceAverageMemoryUtilization
-      Tags:
-        - Key: Name
-          Value: "{{ serviceName }}-{{ ENVIRONMENT }}-scheduler-scaling-policy-memory"

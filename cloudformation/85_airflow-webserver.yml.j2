@@ -142,6 +142,7 @@ Resources:
 
   WebserverEcsService:
     Type: AWS::ECS::Service
+    DependsOn: WebserverAlbListener
     Properties:
       ServiceName: "{{ serviceName }}-{{ ENVIRONMENT }}-webserver"
       Cluster: !ImportValue ecs-AirflowECSClusteArn
@@ -157,10 +158,10 @@ Resources:
             - !ImportValue network-PublicSubnet1Id
             - !ImportValue network-PublicSubnet2Id
             - !ImportValue network-PublicSubnet3Id
-      LoadBalancer:
-        ContainerName: "{{ serviceName }}-{{ ENVIRONMENT }}-webserver"
-        ContainerPort: "{{ service.webserver.port }}"
-        TargetGroupArn: !Ref WebserverAlbTargetGroup
+      LoadBalancers:
+        - ContainerName: "{{ serviceName }}-{{ ENVIRONMENT }}-webserver"
+          ContainerPort: "{{ service.webserver.port }}"
+          TargetGroupArn: !Ref WebserverAlbTargetGroup
 
   WebserverScalableTarget:
     Type: AWS::ApplicationAutoScaling::ScalableTarget
@@ -171,9 +172,6 @@ Resources:
       ServiceNamespace: ecs
       ScalableDimension: 'ecs:service:DesiredCount'
       ResourceId: !Join ["/", [service, !ImportValue ecs-AirflowECSClusterId, !GetAtt WebserverEcsService.Name]]
-      Tags:
-        - Key: Name
-          Value: "{{ serviceName }}-{{ ENVIRONMENT }}-webserver-scalable-target"
 
   ServiceScalingPolicyCPU:
     Type: AWS::ApplicationAutoScaling::ScalingPolicy
@@ -187,9 +185,6 @@ Resources:
         ScaleOutCooldown: "{{ service.webserver.autoscaling.cpu.scaleOutCooldown }}"
         PredefinedMetricSpecification:
           PredefinedMetricType: ECSServiceAverageCPUUtilization
-      Tags:
-        - Key: Name
-          Value: "{{ serviceName }}-{{ ENVIRONMENT }}-webserver-scaling-policy-cpu"
 
   ServiceScalingPolicyMemory:
     Type: AWS::ApplicationAutoScaling::ScalingPolicy
@@ -203,6 +198,7 @@ Resources:
         ScaleOutCooldown: "{{ service.webserver.autoscaling.memory.scaleOutCooldown }}"
         PredefinedMetricSpecification:
           PredefinedMetricType: ECSServiceAverageMemoryUtilization
-      Tags:
-          - Key: Name
-            Value: "{{ serviceName }}-{{ ENVIRONMENT }}-webserver-scaling-policy-memory"
+
+Outputs:
+  AirflowWebServerEndpoint:
+    Value: !GetAtt WebserverAlb.DNSName

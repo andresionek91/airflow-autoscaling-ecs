@@ -48,7 +48,7 @@ Resources:
             - Name: REDIS_PORT
               Value: !ImportValue redis-CeleryBackendPort
             - Name: POSTGRES_HOST
-              Value: !ImportValue database-MetadataDBInstanceHOST
+              Value: !ImportValue database-MetadataDBInstanceHost
             - Name: POSTGRES_PORT
               Value: !ImportValue database-MetadataDBInstancePort
             - Name: POSTGRES_USER
@@ -102,9 +102,6 @@ Resources:
       ServiceNamespace: ecs
       ScalableDimension: 'ecs:service:DesiredCount'
       ResourceId: !Join ["/", [service, !ImportValue ecs-AirflowECSClusterId, !GetAtt WorkersEcsService.Name]]
-      Tags:
-        - Key: Name
-          Value: "{{ serviceName }}-{{ ENVIRONMENT }}-workers-scalable-target"
 
   ServiceScalingPolicyCPU:
     Type: AWS::ApplicationAutoScaling::ScalingPolicy
@@ -118,9 +115,6 @@ Resources:
         ScaleOutCooldown: "{{ service.workers.autoscaling.cpu.scaleOutCooldown }}"
         PredefinedMetricSpecification:
           PredefinedMetricType: ECSServiceAverageCPUUtilization
-      Tags:
-        - Key: Name
-          Value: "{{ serviceName }}-{{ ENVIRONMENT }}-workers-scaling-policy-cpu"
 
   ServiceScalingPolicyMemory:
     Type: AWS::ApplicationAutoScaling::ScalingPolicy
@@ -134,6 +128,3 @@ Resources:
         ScaleOutCooldown: "{{ service.workers.autoscaling.memory.scaleOutCooldown }}"
         PredefinedMetricSpecification:
           PredefinedMetricType: ECSServiceAverageMemoryUtilization
-      Tags:
-        - Key: Name
-          Value: "{{ serviceName }}-{{ ENVIRONMENT }}-workers-scaling-policy-memory"
