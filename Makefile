@@ -1,23 +1,9 @@
-airflow-up:
-	@docker-compose up --build
+cloudformation-validate:
+	python -c 'from deploy_cloudformation import validate_templates;  validate_templates()';
 
-airflow-down:
-	@docker-compose down
+cloudformation-deploy: cloudformation-validate
+	python -c 'from deploy_cloudformation import create_or_update_stacks;  create_or_update_stacks()';
 
-infra-get:
-	cd infrastructure && terraform get;
+cloudformation-destroy:
+	python -c 'from deploy_cloudformation import destroy_stacks;  destroy_stacks()';
 
-infra-init: infra-get
-	cd infrastructure && terraform init -upgrade;
-
-infra-plan: infra-init
-	cd infrastructure && terraform plan;
-
-infra-apply: infra-plan
-	cd infrastructure && terraform apply;
-
-infra-destroy:
-	cd infrastructure && terraform destroy;
-
-clean:
-	rm -rf postgres_data

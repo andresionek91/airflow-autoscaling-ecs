@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# ORIGINAL SOURCE: https://github.com/nicor88/aws-ecs-airflow/
+
 
 TRY_LOOP="20"
 
