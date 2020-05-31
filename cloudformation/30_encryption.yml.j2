@@ -4,7 +4,7 @@ Resources:
   KMSKey:
     Type: AWS::KMS::Key
     Properties:
-      Description: Key for Airflow
+      Description: KMS Key for Airflow
       Enabled: true
       EnableKeyRotation: true
       KeyUsage: ENCRYPT_DECRYPT
@@ -20,12 +20,10 @@ Resources:
             Resource: '*'
       Tags:
         - Key: Name
-          Value: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "kms"]]
-
+          Value: "{{ serviceName }}-{{ ENVIRONMENT }}-kms"
 
 
 Outputs:
-
   KMSKeyId:
     Value: !Ref KMSKey
     Export:
