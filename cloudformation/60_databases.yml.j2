@@ -6,76 +6,79 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: Security group for Aurora Metadata DB. Public access
-      GroupName: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "aurora-public-security-group"]]
+      GroupName: "{{ serviceName }}-{{ ENVIRONMENT }}-aurora-public-security-group"
       SecurityGroupEgress:
         - CidrIp: 0.0.0.0/0
-          FromPort: 5432
+          FromPort: "{{ metadataDb.port }}"
           IpProtocol: -1
-          ToPort: 5432
+          ToPort: "{{ metadataDb.port }}"
       SecurityGroupIngress:
         - CidrIp: 0.0.0.0/0
-          FromPort: 5432
+          FromPort: "{{ metadataDb.port }}"
           IpProtocol: tcp
-          ToPort: 5432
-        - CidrIp: !Join ["/", [!ImportValue parameter-CidrBlock, "16"]]
-          FromPort: 5432
+          ToPort: "{{ metadataDb.port }}"
+        - CidrIp: "{{ service.cidrBlock }}/16"
+          FromPort: "{{ metadataDb.port }}"
           IpProtocol: tcp
-          ToPort: 5432
+          ToPort: "{{ metadataDb.port }}"
       VpcId: !ImportValue network-VpcId
       Tags:
         - Key: Name
-          Value: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "aurora-public-security-group"]]
+          Value: "{{ serviceName }}-{{ ENVIRONMENT }}-aurora-public-security-group"
 
   AuroraDBSubnetGroup:
     Type: AWS::RDS::DBSubnetGroup
     Properties:
       DBSubnetGroupDescription: Posttgres Metadata DB Subnet Group
-      DBSubnetGroupName: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "aurora-db-subnet-group"]]
+      DBSubnetGroupName: "{{ serviceName }}-{{ ENVIRONMENT }}-aurora-db-subnet-group"
       SubnetIds:
         - !ImportValue network-PublicSubnet1Id
         - !ImportValue network-PublicSubnet2Id
         - !ImportValue network-PublicSubnet3Id
       Tags:
         - Key: Name
-          Value: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "aurora-db-subnet-group"]]
+          Value: "{{ serviceName }}-{{ ENVIRONMENT }}-aurora-db-subnet-group"
 
   AuroraDBCluster:
     Type: AWS::RDS::DBCluster
     Properties:
-      AvailabilityZones: !Split [",", !ImportValue parameter-AvailabilityZones]
+      AvailabilityZones:
+        - "{{ AWS_REGION }}{{ publicSubnet.1.availabilityZone }}"
+        - "{{ AWS_REGION }}{{ publicSubnet.2.availabilityZone }}"
+        - "{{ AWS_REGION }}{{ publicSubnet.3.availabilityZone }}"
       BackupRetentionPeriod: 7
-      DatabaseName: !ImportValue parameter-ServiceName
-      DBClusterIdentifier: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "aurora-cluster"]]
+      DatabaseName: "{{ serviceName }}"
+      DBClusterIdentifier: "{{ serviceName }}-{{ ENVIRONMENT }}-aurora-cluster"
       DBClusterParameterGroupName: !Ref AuroraDBParameterGroup
       DBSubnetGroupName: !Ref AuroraDBSubnetGroup
-      DeletionProtection: false
-      EnableHttpEndpoint: true
-      EnableIAMDatabaseAuthentication: true
-      Engine: aurora-postgresql
-      EngineMode: provisioned
-      EngineVersion: 11.7
+      DeletionProtection: "{{ metadataDb.deletionProtection }}"
+      EnableHttpEndpoint: "{{ metadataDb.enableHttpEndpoint }}"
+      EnableIAMDatabaseAuthentication: "{{ metadataDb.enableIAMDatabaseAuthentication }}"
+      Engine: "{{ metadataDb.engine }}"
+      EngineMode: "{{ metadataDb.engineMode }}"
+      EngineVersion: "{{ metadataDb.engineVersion }}"
       KmsKeyId: !ImportValue encryption-KMSKeyId
-      MasterUsername: !Join ['', ['{{resolve:secretsmanager:', !ImportValue secrets-AuroraDBSecretId, ':SecretString:username}}' ]]
-      MasterUserPassword: !Join ['', ['{{resolve:secretsmanager:', !ImportValue secrets-AuroraDBSecretId, ':SecretString:password}}' ]]
-      Port: 5432
-      SourceRegion: !ImportValue parameter-AwsRegion
-      StorageEncrypted: True
+      MasterUsername: {% raw %} !Join ['', ['{{resolve:secretsmanager:', !ImportValue secrets-AuroraDBSecretId, ':SecretString:username}}' ]] {% endraw %}
+      MasterUserPassword: {% raw %} !Join ['', ['{{resolve:secretsmanager:', !ImportValue secrets-AuroraDBSecretId, ':SecretString:password}}' ]] {% endraw %}
+      Port: "{{ metadataDb.port }}"
+      SourceRegion: "{{ AWS_REGION }}"
+      StorageEncrypted: "{{ metadataDb.storageEncrypted }}"
       VpcSecurityGroupIds:
         - !Ref AuroraPublicSecurityGroup
       Tags:
         - Key: Name
-          Value: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "aurora-db-cluster"]]
+          Value: "{{ serviceName }}-{{ ENVIRONMENT }}-aurora-cluster"
 
   AuroraDBParameterGroup:
     Type: AWS::RDS::DBClusterParameterGroup
     Properties:
       Description: Aurora Metadata DB Parameter Group
-      Family: aurora-postgresql11
+      Family: "{{ metadataDb.family }}"
       Parameters:
-        max_connections: !ImportValue parameter-MetadataDBMaxConnections
+        max_connections: "{{ metadataDb.parameters.maxConnections }}"
       Tags:
         - Key: Name
-          Value: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "aurora-db-parameter-group"]]
+          Value: "{{ serviceName }}-{{ ENVIRONMENT }}-aurora-db-parameter-group"
 
   SecretAuroraDBAttachment:
     Type: AWS::SecretsManager::SecretTargetAttachment
@@ -91,7 +94,7 @@ Resources:
       SecretId: !ImportValue secrets-AuroraDBSecretId
       RotationLambdaARN: !ImportValue secrets-SecretRotationLambdaArn
       RotationRules:
-        AutomaticallyAfterDays: 30
+        AutomaticallyAfterDays: "{{ metadataDb.secrets.rotationScheduleDays }}"
 
 Outputs:
   AuroraDBClusterHost:

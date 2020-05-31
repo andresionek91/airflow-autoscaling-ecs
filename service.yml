@@ -20,7 +20,20 @@ publicSubnet:
 
 metadataDb:
   instanceType: db.t3.micro
-  maxConnections: 100
+  port: 5432
+  engine: aurora-postgresql
+  engineMode: provisioned
+  engineVersion: 11.7
+  family: aurora-postgresql11
+  deletionProtection: false
+  enableHttpEndpoint: true
+  storageEncrypted: true
+  enableIAMDatabaseAuthentication: true
+  secrets:
+    rotationScheduleDays: 30
+  parameters:
+    maxConnections: 100
+
 
 celeryBackend:
   InstanceType: cache.t3.small
