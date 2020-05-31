@@ -47,7 +47,7 @@ Resources:
         - "{{ AWS_REGION }}{{ publicSubnet.2.availabilityZone }}"
         - "{{ AWS_REGION }}{{ publicSubnet.3.availabilityZone }}"
       BackupRetentionPeriod: 7
-      DatabaseName: "{{ serviceName }}"
+      DatabaseName: "{{ metadataDb.dbName }}"
       DBClusterIdentifier: "{{ serviceName }}-{{ ENVIRONMENT }}-aurora-cluster"
       DBClusterParameterGroupName: !Ref AuroraDBParameterGroup
       DBSubnetGroupName: !Ref AuroraDBSubnetGroup

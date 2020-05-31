@@ -3,7 +3,7 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: Security group for Airflow Flower
-      GroupName: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "flower-security-group"]]
+      GroupName: "{{ serviceName }}-{{ ENVIRONMENT }}-flower-security-group"
       SecurityGroupEgress:
         - CidrIp: 0.0.0.0/0
           FromPort: 0
@@ -11,35 +11,33 @@ Resources:
           ToPort: 0
       SecurityGroupIngress:
         - CidrIp: 0.0.0.0/0
-          FromPort: 5555
+          FromPort: "{{ service.flower.port }}"
           IpProtocol: tcp
-          ToPort: 5555
+          ToPort: "{{ service.flower.port }}"
       VpcId: !ImportValue network-VpcId
       Tags:
         - Key: Name
-          Value: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "flower-security-group"]]
+          Value: "{{ serviceName }}-{{ ENVIRONMENT }}-flower-security-group"
 
   FlowerTaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
-      Cpu: 512
-      Memory: 1024
+      Cpu: "{{ service.flower.cpu }}"
+      Memory: "{{ service.flower.memory }}"
       ExecutionRoleArn: !ImportValue iam-ECSTaskRoleArn
-      Family: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "flower-task-definition"]]
+      Family: "{{ serviceName }}-{{ ENVIRONMENT }}-flower-task-definition"
       NetworkMode: awsvpc
       RequiresCompatibilities:
         - FARGATE
       ContainerDefinitions:
-        - Name: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "flower"]]
+        - Name: "{{ serviceName }}-{{ ENVIRONMENT }}-flower"
           Image: !Sub
-            - "${AWS::AccountId}.dkr.ecr.${aws_region}.amazonaws.com/${ecr_repository}:${image_version}"
-            - aws_region: !ImportValue parameter-AwsRegion
-              ecr_repository: !ImportValue ecs-AirflowDockerRepositoryName
-              image_version: !ImportValue parameter-ImageVersion
+            - "${AWS::AccountId}.dkr.ecr.{{ AWS_REGION }}.amazonaws.com/${ecr_repository}:{{ service.imageVersion }}"
+            - ecr_repository: !ImportValue ecs-AirflowDockerRepositoryName
           Essential: true
           PortMappings:
-            - ContainerPort: 5555
-              HostPort: 5555
+            - ContainerPort: "{{ service.flower.port }}"
+              HostPort: "{{ service.flower.port }}"
           Command:
             - flower
           Environment:
@@ -52,29 +50,27 @@ Resources:
             - Name: POSTGRES_PORT
               Value: !ImportValue database-AuroraDBClusterPort
             - Name: POSTGRES_USER
-              Value: !Join ['', ['{{resolve:secretsmanager:', !ImportValue secrets-AuroraDBSecretId, ':SecretString:username}}' ]]
+              Value: {% raw %} !Join ['', ['{{resolve:secretsmanager:', !ImportValue secrets-AuroraDBSecretId, ':SecretString:username}}' ]] {% endraw %}
             - Name: POSTGRES_PASSWORD
-              Value: !Join ['', ['{{resolve:secretsmanager:', !ImportValue secrets-AuroraDBSecretId, ':SecretString:password}}' ]]
+              Value: {% raw %} !Join ['', ['{{resolve:secretsmanager:', !ImportValue secrets-AuroraDBSecretId, ':SecretString:password}}' ]] {% endraw %}
             - Name: POSTGRES_DB
-              Value: !ImportValue parameter-ServiceName
+              Value: c
             - Name: AIRFLOW_BASE_URL
-              Value: !ImportValue parameter-AirflowBaseUrl
+              Value: "{{ service.baseUrl }}"
             - Name: ENABLE_REMOTE_LOGGING
               Value: False
             - Name: STAGE
-              Value: !ImportValue parameter-Environment
+              Value: "{{ ENVIRONMENT }}"
             - Name: FERNET_KEY
-              Value: !Join ['', ['{{resolve:secretsmanager:', !ImportValue secrets-AirflowFernetKeySecretId, ':SecretString:fernet_key}}' ]]
+              Value: {% raw %} !Join ['', ['{{resolve:secretsmanager:', !ImportValue secrets-AirflowFernetKeySecretId, ':SecretString:fernet_key}}' ]] {% endraw %}
           LogConfiguration:
             LogDriver: awslogs
             Options:
               awslogs-group: !Sub
-                - "${log_group}/${service}-${environment}"
+                - "${log_group}/{{ serviceName }}-{{ ENVIRONMENT }}"
                 - log_group: !ImportValue cloudwatch-AirflowECSLogGroupName
-                  service: !ImportValue parameter-ServiceName
-                  environment: !ImportValue parameter-Environment
-              awslogs-region: !ImportValue parameter-AwsRegion
+              awslogs-region: "{{ AWS_REGION }}"
               awslogs-stream-prefix: flower
       Tags:
         - Key: Name
-          Value: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "flower-task-definition"]]
+          Value: "{{ serviceName }}-{{ ENVIRONMENT }}-flower-task-definition"

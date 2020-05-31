@@ -7,6 +7,11 @@ service:
   baseUrl: http://localhost:8080
   imageVersion: latest
 
+  flower:
+    cpu: 512
+    memory: 1024
+    port: 5555
+
 publicSubnet:
   1:
     cidrBlock: 10.0.1.0/24
@@ -21,6 +26,7 @@ publicSubnet:
 metadataDb:
   instanceType: db.t3.micro
   port: 5432
+  dbName: airflow
   engine: aurora-postgresql
   engineMode: provisioned
   engineVersion: 11.7
@@ -46,3 +52,7 @@ celeryBackend:
 
 ecr:
   imagesLifecycleCount: 10
+
+cloudwatch:
+  ecsLogGroup:
+    retention: 14
