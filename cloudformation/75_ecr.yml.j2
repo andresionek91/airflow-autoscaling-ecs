@@ -1,0 +1,33 @@
+Description: Creates ECR resources
+
+Resources:
+  AirflowDockerRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      LifecyclePolicy:
+        LifecyclePolicyText: "{
+          \"rules\": [
+            {
+              \"rulePriority\": 1,
+              \"description\": \"Keep only the latest {{ ecr.imagesLifecycleCount }} images\",
+              \"selection\": {
+                \"tagStatus\": \"any\",
+                \"countType\": \"imageCountMoreThan\",
+                \"countNumber\": {{ ecr.imagesLifecycleCount }}
+              },
+              \"action\": {
+                \"type\": \"expire\"
+              }
+            }
+          ]
+        }"
+      RepositoryName: "{{ serviceName }}-{{ ENVIRONMENT }}-docker-ecr"
+      Tags:
+        - Key: Name
+          Value: "{{ serviceName }}-{{ ENVIRONMENT }}-docker-ecr"
+
+Outputs:
+  AirflowDockerRepositoryName:
+    Value: !Ref AirflowDockerRepository
+    Export:
+      Name: "ecs-AirflowDockerRepositoryName"

@@ -4,7 +4,7 @@ Resources:
   RedisSubnetGroup:
     Type: AWS::ElastiCache::SubnetGroup
     Properties:
-      CacheSubnetGroupName: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "redis-subnet-group"]]
+      CacheSubnetGroupName: "{{ serviceName }}-{{ ENVIRONMENT }}-redis-subnet-group"
       Description: Redis Subnet Group
       SubnetIds:
         - !ImportValue network-PublicSubnet1Id
@@ -15,39 +15,40 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: Security group for Redis
-      GroupName: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "redis-security-group"]]
+      GroupName: "{{ serviceName }}-{{ ENVIRONMENT }}-redis-security-group"
       SecurityGroupEgress:
         - CidrIp: 0.0.0.0/0
           FromPort: 0
           IpProtocol: -1
           ToPort: 0
       SecurityGroupIngress:
-        - CidrIp: !Join ["/", [!ImportValue parameter-CidrBlock, "16"]]
-          FromPort: 6379
+        - CidrIp: "{{ service.cidrBlock }}/16"
+          FromPort: "{{ celeryBackend.port }}"
           IpProtocol: tcp
-          ToPort: 6379
+          ToPort: "{{ celeryBackend.port }}"
       VpcId: !ImportValue network-VpcId
       Tags:
         - Key: Name
-          Value: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "redis-security-group"]]
+          Value: "{{ serviceName }}-{{ ENVIRONMENT }}-redis-security-group"
 
   CeleryBackend:
     Type: AWS::ElastiCache::CacheCluster
     Properties:
-      AutoMinorVersionUpgrade: true
-      AZMode: single-az
-      CacheNodeType: !ImportValue parameter-CeleryBackendInstanceType
+      AutoMinorVersionUpgrade: "{{ celeryBackend.autoMinorVersionUpgrade }}"
+      AZMode: "{{ celeryBackend.azMode }}"
+      CacheNodeType: "{{ celeryBackend.instanceType }}"
       CacheSubnetGroupName: !Ref RedisSubnetGroup
-      ClusterName: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "celery-cluster"]]
-      Engine: redis
-      EngineVersion: 4.0.10
-      NumCacheNodes: !ImportValue parameter-CeleryBackendNumNodes
-      Port: 6379
+      ClusterName: "{{ serviceName }}-{{ ENVIRONMENT }}-celery-cluster"
+      Engine: "{{ celeryBackend.engine }}"
+      EngineVersion: "{{ celeryBackend.engineVersion }}"
+      NumCacheNodes: "{{ celeryBackend.numNodes }}"
+      Port: "{{ celeryBackend.port }}"
       VpcSecurityGroupIds:
         - !Ref RedisSecurityGroup
       Tags:
         - Key: Name
-          Value: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "celery-cluster"]]
+          Value: "{{ serviceName }}-{{ ENVIRONMENT }}-celery-cluster"
+
 
 Outputs:
   CeleryBackendHost:

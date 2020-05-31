@@ -36,5 +36,13 @@ metadataDb:
 
 
 celeryBackend:
-  InstanceType: cache.t3.small
+  port: 6379
+  azMode: single-az
+  engine: redis
+  engineVersion: 4.0.10
+  autoMinorVersionUpgrade: true
+  instanceType: cache.t3.small
   numNodes: 1
+
+ecr:
+  imagesLifecycleCount: 10

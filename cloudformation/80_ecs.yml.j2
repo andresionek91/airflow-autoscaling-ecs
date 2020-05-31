@@ -1,41 +1,10 @@
 Description: Creates ECS resources
 
 Resources:
-  AirflowDockerRepository:
-    Type: AWS::ECR::Repository
-    Properties:
-      LifecyclePolicy:
-        LifecyclePolicyText: "{
-          \"rules\": [
-            {
-              \"rulePriority\": 1,
-              \"description\": \"Keep only the latest 10 images\",
-              \"selection\": {
-                \"tagStatus\": \"any\",
-                \"countType\": \"imageCountMoreThan\",
-                \"countNumber\": 10
-              },
-              \"action\": {
-                \"type\": \"expire\"
-              }
-            }
-          ]
-        }"
-      RepositoryName: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "docker-ecr"]]
-      Tags:
-        - Key: Name
-          Value: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "docker-ecr"]]
-
   AirflowECSCluster:
     Type: AWS::ECS::Cluster
     Properties:
-      ClusterName: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "ecs-cluster"]]
+      ClusterName: "{{ serviceName }}-{{ ENVIRONMENT }}-ecs-cluster"
       Tags:
         - Key: Name
-          Value: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "ecs-cluster"]]
-
-Outputs:
-  AirflowDockerRepositoryName:
-    Value: !Ref AirflowDockerRepository
-    Export:
-      Name: "ecs-AirflowDockerRepositoryName"
+          Value: "{{ serviceName }}-{{ ENVIRONMENT }}-ecs-cluster"
