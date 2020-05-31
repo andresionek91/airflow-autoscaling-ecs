@@ -65,7 +65,7 @@ def update_stack(stack_name, template_body, **kwargs):
             StackName=stack_name,
             Capabilities=['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
             TemplateBody=template_body,
-            Tags=create_default_tags()
+            Tags=create_default_tags() if 'airflow' not in stack_name else []
         )
 
     except ClientError as e:
@@ -89,7 +89,7 @@ def create_stack(stack_name, template_body, **kwargs):
         Capabilities=['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
         TimeoutInMinutes=30,
         OnFailure='ROLLBACK',
-        Tags=create_default_tags()
+        Tags=create_default_tags() if 'airflow' not in stack_name else []
     )
 
     cloudformation_client.get_waiter('stack_create_complete').wait(
