@@ -152,7 +152,7 @@ Resources:
       DesiredCount: "{{ service.webserver.desiredCount }}"
       NetworkConfiguration:
         AwsvpcConfiguration:
-          AssignPublicIp: true
+          AssignPublicIp: ENABLED
           SecurityGroups:
             - !Ref WebserverInternalSecurityGroup
           Subnets:

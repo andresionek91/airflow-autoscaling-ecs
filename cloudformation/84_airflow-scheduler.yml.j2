@@ -79,7 +79,7 @@ Resources:
       DesiredCount: "{{ service.scheduler.desiredCount }}"
       NetworkConfiguration:
         AwsvpcConfiguration:
-          AssignPublicIp: true
+          AssignPublicIp: ENABLED
           SecurityGroups:
             - !Ref SchedulerSecurityGroup
           Subnets:

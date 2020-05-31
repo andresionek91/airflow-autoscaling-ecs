@@ -87,7 +87,7 @@ Resources:
       DesiredCount: "{{ service.workers.desiredCount }}"
       NetworkConfiguration:
         AwsvpcConfiguration:
-          AssignPublicIp: true
+          AssignPublicIp: ENABLED
           SecurityGroups:
             - !Ref WorkerSecurityGroup
           Subnets:

@@ -34,7 +34,7 @@ def create_fernet_key():
         response = client.get_secret_value(
             SecretId=render_template('{{ serviceName }}-{{ ENVIRONMENT }}-fernet-key'),
         )
-        os.environ['FERNET_KEY'] = response['SecretString']
+        os.environ['FERNET_KEY'] = json.loads(response['SecretString'])['fernet_key']
         logging.info('FERNET KEY found in Secrets Manager.')
     except client.exceptions.ResourceNotFoundException:
         fernet_key = Fernet.generate_key().decode()

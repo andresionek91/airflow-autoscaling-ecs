@@ -87,7 +87,7 @@ Resources:
       DesiredCount: "{{ service.flower.desiredCount }}"
       NetworkConfiguration:
         AwsvpcConfiguration:
-          AssignPublicIp: true
+          AssignPublicIp: ENABLED
           SecurityGroups:
             - !Ref FlowerSecurityGroup
           Subnets:

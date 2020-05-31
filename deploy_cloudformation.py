@@ -5,24 +5,26 @@ import logging
 from zipfile import ZipFile
 from botocore.exceptions import ClientError
 from tempfile import NamedTemporaryFile
+import click
 
 from utils import _get_abs_path
 from utils import render_template
-from utils import create_fernet_key
 from utils import create_default_tags
+from utils import create_fernet_key
+
 
 logging.basicConfig(level=logging.INFO)
 cloudformation_client = boto3.client('cloudformation')
 cloudformation_resource = boto3.resource('cloudformation')
 s3_client = boto3.client('s3')
 
-create_fernet_key()
-
 
 def get_cloudformation_templates(reverse=False):
     cf_templates = []
     files = os.listdir(_get_abs_path("cloudformation"))
     files.sort(reverse=reverse)
+    create_fernet_key()
+
     for filename in files:
         path = _get_abs_path("cloudformation") + "/" + filename
         with open(path) as f:
@@ -35,6 +37,7 @@ def get_cloudformation_templates(reverse=False):
             'filename': filename
          }
         cf_templates.append(cf_template)
+
     return cf_templates
 
 
@@ -147,6 +150,8 @@ def copy_rotate_lambda_functions_to_s3(stack_name):
 
 
 def destroy_stacks():
+    if not click.confirm('You are about to delete all your Airflow Infrastructure. Do you want to continue?', default=False):
+        return
     cf_templates = get_cloudformation_templates(reverse=True)
     existing_stacks = get_existing_stacks()
 

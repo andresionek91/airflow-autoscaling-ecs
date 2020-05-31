@@ -1,4 +1,7 @@
-cloudformation-validate:
+install-requirements:
+	pip install -r requirements.txt
+
+cloudformation-validate: install-requirements
 	python -c 'from deploy_cloudformation import validate_templates;  validate_templates()';
 
 cloudformation-deploy: cloudformation-validate
