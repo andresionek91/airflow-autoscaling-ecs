@@ -1,11 +1,22 @@
 serviceName: airflow
-ownerName: data-engineering
+owner: data-engineering
 
 service:
   logGroupName: airflow/ecs/fargate
   cidrBlock: 10.0.0.0
   baseUrl: http://localhost:8080
   imageVersion: latest
+
+publicSubnet:
+  1:
+    cidrBlock: 10.0.1.0/24
+    availabilityZone: a
+  2:
+    cidrBlock: 10.0.2.0/24
+    availabilityZone: b
+  3:
+    cidrBlock: 10.0.3.0/24
+    availabilityZone: c
 
 metadataDb:
   instanceType: db.t3.micro

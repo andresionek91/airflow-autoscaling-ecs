@@ -1,21 +1,20 @@
 Description: Creates network resources for Airflow
 
 Resources:
-
   VPC:
     Type: AWS::EC2::VPC
     Properties:
-      CidrBlock: !Join ["/", [!ImportValue parameter-CidrBlock, "16"]]
+      CidrBlock: "{{ service.cidrBlock }}/16"
       Tags:
         - Key: Name
-          Value: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "vpc"]]
+          Value: "{{ serviceName }}-{{ ENVIRONMENT }}-vpc"
 
   InternetGateway:
     Type: AWS::EC2::InternetGateway
     Properties:
       Tags:
         - Key: Name
-          Value: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "igw"]]
+          Value: "{{ serviceName }}-{{ ENVIRONMENT }}-igw"
 
   AttachGateway:
     Type: AWS::EC2::VPCGatewayAttachment
@@ -29,17 +28,17 @@ Resources:
       VpcId: !Ref VPC
       Tags:
         - Key: Name
-          Value: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "public-route-table"]]
+          Value: "{{ serviceName }}-{{ ENVIRONMENT }}-public-route-table"
 
   PublicSubnet1:
     Type: AWS::EC2::Subnet
     Properties:
-      AvailabilityZone: !Select [0, !Split [",", !ImportValue parameter-AvailabilityZones]]
-      CidrBlock: 10.0.1.0/24
+      AvailabilityZone: "{{ AWS_REGION }}{{ publicSubnet.1.availabilityZone }}"
+      CidrBlock: "{{ publicSubnet.1.cidrBlock }}"
       VpcId: !Ref VPC
       Tags:
         - Key: Name
-          Value: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "public-subnet-1"]]
+          Value: "{{ serviceName }}-{{ ENVIRONMENT }}-public-subnet-1"
 
   PublicSubnet1RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
@@ -50,12 +49,12 @@ Resources:
   PublicSubnet2:
     Type: AWS::EC2::Subnet
     Properties:
-      AvailabilityZone: !Select [1, !Split [",", !ImportValue parameter-AvailabilityZones]]
-      CidrBlock: 10.0.2.0/24
+      AvailabilityZone: "{{ AWS_REGION }}{{ publicSubnet.2.availabilityZone }}"
+      CidrBlock: "{{ publicSubnet.2.cidrBlock }}"
       VpcId: !Ref VPC
       Tags:
         - Key: Name
-          Value: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "public-subnet-2"]]
+          Value: "{{ serviceName }}-{{ ENVIRONMENT }}-public-subnet-2"
 
   PublicSubnet2RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
@@ -66,12 +65,12 @@ Resources:
   PublicSubnet3:
     Type: AWS::EC2::Subnet
     Properties:
-      AvailabilityZone: !Select [2, !Split [",", !ImportValue parameter-AvailabilityZones]]
-      CidrBlock: 10.0.3.0/24
+      AvailabilityZone: "{{ AWS_REGION }}{{ publicSubnet.3.availabilityZone }}"
+      CidrBlock: "{{ publicSubnet.3.cidrBlock }}"
       VpcId: !Ref VPC
       Tags:
         - Key: Name
-          Value: !Join ["-", [!ImportValue parameter-ServiceName, !ImportValue parameter-Environment, "public-subnet-3"]]
+          Value: "{{ serviceName }}-{{ ENVIRONMENT }}-public-subnet-3"
 
   PublicSubnet3RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
@@ -80,9 +79,7 @@ Resources:
       SubnetId: !Ref PublicSubnet3
 
 
-
 Outputs:
-
   VpcId:
     Value: !Ref VPC
     Export:
