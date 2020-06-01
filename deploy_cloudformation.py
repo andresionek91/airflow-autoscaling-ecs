@@ -152,7 +152,8 @@ def update_ecs_service(airflow_service):
     aws_account_id = get_aws_account_id()
     ecs_service = render_template('{{ serviceName }}-{{ ENVIRONMENT }}-{airflow_service}').format(airflow_service=airflow_service)
     ecs_cluster = render_template('arn:aws:ecs:{{ AWS_REGION }}:{aws_account_id}:cluster/{{ serviceName }}-{{ ENVIRONMENT }}-ecs-cluster').format(aws_account_id=aws_account_id)
-    ecs_client.update_service(cluster=ecs_cluster, service=ecs_service)
+    logging.info(f'RESTARTING SERVICE: {ecs_service}')
+    ecs_client.update_service(cluster=ecs_cluster, service=ecs_service, forceNewDeployment=True)
 
 
 def restart_airflow_ecs():
