@@ -5,7 +5,6 @@ import boto3
 from cryptography.fernet import Fernet
 import logging
 import json
-import sys
 from uuid import uuid4
 
 logging.basicConfig(level=logging.INFO)
@@ -56,9 +55,8 @@ def create_default_tags():
 
 def get_aws_account_id():
     client = boto3.client("sts")
-    account_id = client.get_caller_identity()["Account"]
-    sys.exit(account_id)
+    return client.get_caller_identity()["Account"]
 
 
 def generate_hash(n):
-    sys.exit(uuid4().hex[:n])
+    return str(uuid4().hex[:n])

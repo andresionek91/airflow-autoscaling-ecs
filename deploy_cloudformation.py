@@ -1,6 +1,7 @@
 import boto3
 import os
 import re
+import json
 import logging
 from botocore.exceptions import ClientError
 import click
@@ -9,12 +10,14 @@ from utils import _get_abs_path
 from utils import render_template
 from utils import create_default_tags
 from utils import create_fernet_key
+from utils import get_aws_account_id
 
 
 logging.basicConfig(level=logging.INFO)
 cloudformation_client = boto3.client('cloudformation')
 cloudformation_resource = boto3.resource('cloudformation')
 s3_client = boto3.client('s3')
+ecs_client = boto3.client('ecs')
 
 
 def get_cloudformation_templates(reverse=False):
@@ -99,13 +102,6 @@ def create_stack(stack_name, template_body, **kwargs):
     logging.info(f'CREATE COMPLETE')
 
 
-def filter_infra_templates(cf_templates, is_foundation):
-    if is_foundation:
-        return [x for x in cf_templates if 'airflow' not in x['stack_name']]
-    else:
-        return [x for x in cf_templates if 'airflow' in x['stack_name']]
-
-
 def create_or_update_stacks(is_foundation):
     cf_templates = get_cloudformation_templates()
     cf_templates = filter_infra_templates(cf_templates, is_foundation)
@@ -145,15 +141,39 @@ def delete_stack(stack_name, **kwargs):
     logging.info(f'DELETE COMPLETE')
 
 
+def filter_infra_templates(cf_templates, is_foundation):
+    if is_foundation:
+        return [x for x in cf_templates if 'airflow' not in x['stack_name']]
+    else:
+        return [x for x in cf_templates if 'airflow' in x['stack_name']]
+
+
+def update_ecs_service(airflow_service):
+    aws_account_id = get_aws_account_id()
+    ecs_service = render_template('{{ serviceName }}-{{ ENVIRONMENT }}-{airflow_service}').format(airflow_service=airflow_service)
+    ecs_cluster = render_template('arn:aws:ecs:{{ AWS_REGION }}:{aws_account_id}:cluster/{{ serviceName }}-{{ ENVIRONMENT }}-ecs-cluster').format(aws_account_id=aws_account_id)
+    ecs_client.update_service(cluster=ecs_cluster, service=ecs_service)
+
+
+def restart_airflow_ecs():
+    update_ecs_service('workers')
+    update_ecs_service('flower')
+    update_ecs_service('scheduler')
+    update_ecs_service('webserver')
+
+
 def log_outputs():
     cf_templates = get_cloudformation_templates()
+    cf_templates = filter_infra_templates(cf_templates, True)
+    outputs = {}
+    logging.info(f'\n\n\n## OUTPUTS ##')
     for cf_template in cf_templates:
         stack_name = cf_template['stack_name']
-        logging.info(f'\n\n\n## {stack_name} OUTPUTS ##')
         stack = cloudformation_resource.Stack(stack_name)
-        outputs = stack.outputs if stack.outputs else []
-        for output in outputs:
-            key = output.get('OutputKey', '')
-            value = output.get('OutputValue', '')
-            logging.info(f'{key}: {value}')
+        outputs = {
+            stack_name: stack.outputs,
+            **outputs
+        }
+    logging.info(json.dumps(outputs, indent=4))
 
+    return outputs

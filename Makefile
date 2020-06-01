@@ -7,17 +7,15 @@ cloudformation-validate: install-requirements
 infra-deploy: cloudformation-validate
 	python -c 'from deploy_cloudformation import create_or_update_stacks;  create_or_update_stacks(is_foundation=True)';
 
-airflow-build:
-	echo "BUILDING IMAGE: airflow-$(ENVIRONMENT):latest";
-	docker build --rm --pull -t airflow-$(ENVIRONMENT):latest .;
-
-push-to-ecr: airflow-build
-	bash push-to-ecr.sh;
+push-to-ecr:
+	python -c 'from deploy_docker import update_airflow_image;  update_airflow_image()';
 
 airflow-deploy: infra-deploy push-to-ecr
-	python -c 'from deploy_cloudformation import create_or_update_stacks;  create_or_update_stacks(is_foundation=False)';
+	python -c 'from scripts.deploy_cloudformation import create_or_update_stacks;  create_or_update_stacks(is_foundation=False)';
 	python -c 'from deploy_cloudformation import log_outputs;  log_outputs()';
+
+airflow-update-ecs: push-to-ecr
+	python -c 'from deploy_cloudformation import restart_airflow_ecs;  restart_airflow_ecs()';
 
 airflow-destroy:
 	python -c 'from deploy_cloudformation import destroy_stacks;  destroy_stacks()';
-
