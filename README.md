@@ -30,6 +30,11 @@ To deploy or update your stack run the following command:
 make airflow-deploy
 ```
 
+To rebuild Airflow Docker Image and push it to ECR (without infrastructure changes), run:
+```shell script
+make airflow-push-image
+```
+
 To destroy your stack run the following command:
 ```shell script
 make airflow-destroy

@@ -11,10 +11,10 @@ push-to-ecr:
 	python -c 'from deploy_docker import update_airflow_image;  update_airflow_image()';
 
 airflow-deploy: infra-deploy push-to-ecr
-	python -c 'from scripts.deploy_cloudformation import create_or_update_stacks;  create_or_update_stacks(is_foundation=False)';
+	python -c 'from deploy_cloudformation import create_or_update_stacks;  create_or_update_stacks(is_foundation=False)';
 	python -c 'from deploy_cloudformation import log_outputs;  log_outputs()';
 
-airflow-update-ecs: push-to-ecr
+airflow-push-image: push-to-ecr
 	python -c 'from deploy_cloudformation import restart_airflow_ecs;  restart_airflow_ecs()';
 
 airflow-destroy:
