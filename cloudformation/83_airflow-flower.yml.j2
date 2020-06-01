@@ -118,7 +118,14 @@ Resources:
       Protocol: HTTP
       VpcId: !ImportValue network-VpcId
       TargetType: ip
-      HealthCheckEnabled: false
+      HealthCheckEnabled: true
+      HealthCheckIntervalSeconds: 10
+      HealthCheckPath: /
+      HealthCheckPort: "{{ service.flower.port }}"
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 5
+      UnhealthyThresholdCount: 3
       Tags:
         - Key: Name
           Value: "{{ serviceName }}-{{ ENVIRONMENT }}-flower-alb-tg"
@@ -136,6 +143,7 @@ Resources:
 
   FlowerEcsService:
     Type: AWS::ECS::Service
+    DependsOn: FlowerAlbListener
     Properties:
       ServiceName: "{{ serviceName }}-{{ ENVIRONMENT }}-flower"
       Cluster: !ImportValue ecs-AirflowECSClusteArn
@@ -151,6 +159,10 @@ Resources:
             - !ImportValue network-PublicSubnet1Id
             - !ImportValue network-PublicSubnet2Id
             - !ImportValue network-PublicSubnet3Id
+      LoadBalancers:
+        - ContainerName: "{{ serviceName }}-{{ ENVIRONMENT }}-flower"
+          ContainerPort: "{{ service.flower.port }}"
+          TargetGroupArn: !Ref FlowerAlbTargetGroup
 
   FlowerScalableTarget:
     Type: AWS::ApplicationAutoScaling::ScalableTarget
