@@ -164,8 +164,7 @@ def restart_airflow_ecs():
 
 
 def log_outputs():
-    cf_templates = get_cloudformation_templates()
-    cf_templates = filter_infra_templates(cf_templates, True)
+    cf_templates = get_cloudformation_templates(reverse=True)
     outputs = {}
     logging.info(f'\n\n\n## OUTPUTS ##')
     for cf_template in cf_templates:

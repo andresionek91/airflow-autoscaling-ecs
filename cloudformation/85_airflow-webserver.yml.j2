@@ -121,7 +121,7 @@ Resources:
       HealthCheckEnabled: true
       HealthCheckIntervalSeconds: 10
       HealthCheckPath: /health
-      HealthCheckPort: 8080
+      HealthCheckPort: "{{ service.webserver.port }}"
       HealthCheckProtocol: HTTP
       HealthCheckTimeoutSeconds: 5
       HealthyThresholdCount: 5

@@ -1,11 +1,11 @@
 Description: Creates Airflow Flower Service
 
 Resources:
-  FlowerSecurityGroup:
+  FlowerExternalSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: Security group for Airflow Flower
-      GroupName: "{{ serviceName }}-{{ ENVIRONMENT }}-flower-security-group"
+      GroupDescription: Security group for Airflow Flower.  Allow all inbound traffic.
+      GroupName: "{{ serviceName }}-{{ ENVIRONMENT }}-flower-external-security-group"
       SecurityGroupEgress:
         - CidrIp: 0.0.0.0/0
           FromPort: 0
@@ -13,13 +13,33 @@ Resources:
           ToPort: 0
       SecurityGroupIngress:
         - CidrIp: 0.0.0.0/0
+          FromPort: "{{ service.port }}"
+          IpProtocol: tcp
+          ToPort: "{{ service.port }}"
+      VpcId: !ImportValue network-VpcId
+      Tags:
+        - Key: Name
+          Value: "{{ serviceName }}-{{ ENVIRONMENT }}-flower-external-security-group"
+
+  FlowerInternalSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for Airflow Flower
+      GroupName: "{{ serviceName }}-{{ ENVIRONMENT }}-flower-internal-security-group"
+      SecurityGroupEgress:
+        - CidrIp: 0.0.0.0/0
+          FromPort: 0
+          IpProtocol: -1
+          ToPort: 0
+      SecurityGroupIngress:
+        - SourceSecurityGroupId: !GetAtt FlowerExternalSecurityGroup.GroupId
           FromPort: "{{ service.flower.port }}"
           IpProtocol: tcp
           ToPort: "{{ service.flower.port }}"
       VpcId: !ImportValue network-VpcId
       Tags:
         - Key: Name
-          Value: "{{ serviceName }}-{{ ENVIRONMENT }}-flower-security-group"
+          Value: "{{ serviceName }}-{{ ENVIRONMENT }}-flower-internal-security-group"
 
   FlowerTaskDefinition:
     Type: AWS::ECS::TaskDefinition
@@ -75,8 +95,55 @@ Resources:
         - Key: Name
           Value: "{{ serviceName }}-{{ ENVIRONMENT }}-flower-task-definition"
 
+  FlowerAlb:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: "{{ serviceName }}-{{ ENVIRONMENT }}-flower-alb"
+      Type: application
+      SecurityGroups:
+        - !Ref FlowerExternalSecurityGroup
+      Subnets:
+        - !ImportValue network-PublicSubnet1Id
+        - !ImportValue network-PublicSubnet2Id
+        - !ImportValue network-PublicSubnet3Id
+      Tags:
+        - Key: Name
+          Value: "{{ serviceName }}-{{ ENVIRONMENT }}-flower-alb"
+
+  FlowerAlbTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: "{{ serviceName }}-{{ ENVIRONMENT }}-flower-alb-tg"
+      Port: "{{ service.flower.port }}"
+      Protocol: HTTP
+      VpcId: !ImportValue network-VpcId
+      TargetType: ip
+      HealthCheckEnabled: true
+      HealthCheckIntervalSeconds: 10
+      HealthCheckPath: /
+      HealthCheckPort: "{{ service.flower.port }}"
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 5
+      UnhealthyThresholdCount: 3
+      Tags:
+        - Key: Name
+          Value: "{{ serviceName }}-{{ ENVIRONMENT }}-flower-alb-tg"
+
+  FlowerAlbListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - TargetGroupArn: !Ref FlowerAlbTargetGroup
+          Type: forward
+      LoadBalancerArn: !Ref FlowerAlb
+      Port: "{{ service.port }}"
+      Protocol: HTTP
+
+
   FlowerEcsService:
     Type: AWS::ECS::Service
+    DependsOn: FlowerAlbListener
     Properties:
       ServiceName: "{{ serviceName }}-{{ ENVIRONMENT }}-flower"
       Cluster: !ImportValue ecs-AirflowECSClusteArn
@@ -87,11 +154,15 @@ Resources:
         AwsvpcConfiguration:
           AssignPublicIp: ENABLED
           SecurityGroups:
-            - !Ref FlowerSecurityGroup
+            - !Ref FlowerInternalSecurityGroup
           Subnets:
             - !ImportValue network-PublicSubnet1Id
             - !ImportValue network-PublicSubnet2Id
             - !ImportValue network-PublicSubnet3Id
+      LoadBalancers:
+        - ContainerName: "{{ serviceName }}-{{ ENVIRONMENT }}-flower"
+          ContainerPort: "{{ service.flower.port }}"
+          TargetGroupArn: !Ref FlowerAlbTargetGroup
 
   FlowerScalableTarget:
     Type: AWS::ApplicationAutoScaling::ScalableTarget
@@ -129,3 +200,7 @@ Resources:
         ScaleOutCooldown: "{{ service.flower.autoscaling.memory.scaleOutCooldown }}"
         PredefinedMetricSpecification:
           PredefinedMetricType: ECSServiceAverageMemoryUtilization
+
+Outputs:
+  AirflowFlowerEndpoint:
+    Value: !GetAtt FlowerAlb.DNSName

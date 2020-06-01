@@ -68,4 +68,31 @@ make airflow-destroy
 ```
 
 
+### Access to Airflow UI:
+![Airflow UI](assets/airflow-ui.png)
+
+Look for AirflowWebServerEndpoint on outputs logged to your terminal.
+```
+    "cfn-airflow-webserver": [
+        {
+            "OutputKey": "AirflowWebServerEndpoint",
+            "OutputValue": "airflow-dev-webserver-alb-1234567890.us-east-1.elb.amazonaws.com"
+        }
+    ],
+```
+
+
+### Access to Flower UI:
+![Airflow UI](assets/flower-ui.png)
+
+Look for AirflowFlowerEndpoint on outputs logged to your terminal.
+```
+    "cfn-airflow-flower": [
+        {
+            "OutputKey": "AirflowFlowerEndpoint",
+            "OutputValue": "airflow-dev-flower-alb-1234567890.us-east-1.elb.amazonaws.com"
+        }
+    ],
+```
+
 *Inspired by the work done by [Nicor88](https://github.com/nicor88/aws-ecs-airflow)*
