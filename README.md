@@ -42,7 +42,7 @@ make airflow-destroy
 
 ## Features
 * Control all Airflow infrastructure from a single `service.yml` file.
-* Metadata DB Passwords Managed with AWS Secrets Manager and rotated on a configurable schedule.
+* Metadata DB Passwords Managed with AWS Secrets Manager.
 * Autoscaling enabled and configurable for all Airflow sub-services (workers, flower, webserver, scheduler)
 * TODO: Continuous Integration using AWS CodePipeline
 * TODO: Create isolated DAGs using `docker_operator`
