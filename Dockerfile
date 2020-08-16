@@ -10,7 +10,7 @@ ENV DEBIAN_FRONTEND noninteractive
 ENV TERM linux
 
 # Airflow
-ARG AIRFLOW_VERSION=1.10.10
+ARG AIRFLOW_VERSION=1.10.11
 ENV AIRFLOW_HOME=/usr/local/airflow
 ENV AIRFLOW_GPL_UNIDECODE=yes
 
@@ -66,7 +66,7 @@ RUN set -ex \
     && pip install pyOpenSSL \
     && pip install ndg-httpsclient \
     && pip install pyasn1 \
-    && pip install apache-airflow[async,crypto,celery,kubernetes,jdbc,password,postgres,s3,slack]==${AIRFLOW_VERSION} \
+    && pip install apache-airflow[async,crypto,celery,kubernetes,jdbc,password,postgres,s3,slack,amazon]==${AIRFLOW_VERSION} \
     && pip install werkzeug==${WERKZEUG_VERSION} \
     && pip install redis==${PYTHON_REDIS_VERSION} \
     && pip install celery[redis]==${CELERY_REDIS_VERSION} \
