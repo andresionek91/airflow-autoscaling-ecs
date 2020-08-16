@@ -24,6 +24,11 @@ All infrastructure is created with Cloudformation and Secrets are managed by AWS
 	export ENVIRONMENT=dev;
 ```
 
+## Deploy Airflow Locally
+```shell script
+make airflow-local
+```
+
 ## Deploy Airflow on AWS ECS
 To deploy or update your stack run the following command:
 ```shell script
