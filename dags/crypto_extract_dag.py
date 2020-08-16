@@ -34,12 +34,6 @@ with DAG('crypto_extract',
                 {
                     "name": "dev-crypto-extract-image",
                     "command": ["python", "main.py", execution_date],
-                    "environment": [
-                        {
-                            'name': 'AWS_ACCESS_KEY_ID',
-                            'value': 'string'
-                        }
-                    ]
                 }
             ],
         },
