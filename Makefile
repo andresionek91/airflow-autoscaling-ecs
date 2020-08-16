@@ -22,5 +22,5 @@ airflow-destroy:
 
 airflow-local:
 	pip install cryptography
-	export AIRFLOW_FERNET_KEY=$(python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())")
+	export AIRFLOW_FERNET_KEY=$(shell python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())")
 	docker-compose up --build
