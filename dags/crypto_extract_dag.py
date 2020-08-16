@@ -18,7 +18,7 @@ execution_date = '{{ ds }}'  # Access execution date
 
 with DAG('crypto_extract',
          description='DAG to extract Daily Summaries from MercadoBitcoin',
-         schedule_interval='* 1 * * *',
+         schedule_interval='0 1 * * *',
          catchup=True,
          default_args=default_args) as dag:
 
