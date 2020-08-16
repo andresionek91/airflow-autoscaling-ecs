@@ -19,3 +19,8 @@ airflow-push-image: push-to-ecr
 
 airflow-destroy:
 	python -c 'from deploy_cloudformation import destroy_stacks;  destroy_stacks()';
+
+airflow-local:
+	pip install cryptography
+	export AIRFLOW_FERNET_KEY=$(python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())")
+	docker-compose up --build
