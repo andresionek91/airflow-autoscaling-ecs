@@ -7,21 +7,17 @@ Resources:
       GroupDescription: Security group for Airflow webserver. Allow all inbound traffic.
       GroupName: "{{ serviceName }}-{{ ENVIRONMENT }}-webserver-security-group"
       SecurityGroupEgress:
+        - CidrIp: 0.0.0.0/0
+          FromPort: 0
+          IpProtocol: -1
+          ToPort: 0
+      SecurityGroupIngress:
       {% for ip in whitelistedIPs %}
         - CidrIp: "{{ ip }}"
-          FromPort: 80
-          IpProtocol: tcp
-          ToPort: 80
-        - CidrIp: "{{ ip }}"
-          FromPort: 443
-          IpProtocol: tcp
-          ToPort: 443
-      {% endfor %}
-      SecurityGroupIngress:
-        - CidrIp: 0.0.0.0/0
           FromPort: "{{ service.port }}"
           IpProtocol: tcp
           ToPort: "{{ service.port }}"
+      {% endfor %}
       VpcId: !ImportValue network-VpcId
       Tags:
         - Key: Name
