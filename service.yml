@@ -81,8 +81,6 @@ publicSubnet:
     cidrBlock: 10.0.3.0/24
     availabilityZone: c
 
-# List of SecurityGroupEgress.
-# Will be used to whitelist IPs for webserver, flower, workers and scheduler
 whitelistedIPs:
   - 0.0.0.0/0
 
