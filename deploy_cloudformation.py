@@ -44,7 +44,6 @@ def get_cloudformation_templates(reverse=False):
 
 def validate_templates():
     cf_templates = get_cloudformation_templates()
-
     for cf_template in cf_templates:
         logging.info('Validating CF template {}'.format(cf_template['filename']))
         cloudformation_client.validate_template(
