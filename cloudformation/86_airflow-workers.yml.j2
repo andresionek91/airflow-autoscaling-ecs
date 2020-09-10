@@ -6,6 +6,11 @@ Resources:
     Properties:
       GroupDescription: Security group for Airflow workers
       GroupName: "{{ serviceName }}-{{ ENVIRONMENT }}-workers-security-group"
+      SecurityGroupEgress:
+        - CidrIp: 0.0.0.0/0
+          FromPort: 0
+          IpProtocol: -1
+          ToPort: 0
       SecurityGroupIngress:
         - CidrIp: "{{ service.cidrBlock }}/16"
           FromPort: "{{ service.workers.port }}"
