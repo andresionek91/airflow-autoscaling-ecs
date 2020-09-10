@@ -1,7 +1,10 @@
 install-requirements:
 	pip install -r requirements.txt
 
-cloudformation-validate: install-requirements
+check-env-setup:
+	python -c 'from utils import check_environment_variables;  check_environment_variables()';
+
+cloudformation-validate: install-requirements check-env-setup
 	python -c 'from deploy_cloudformation import validate_templates;  validate_templates()';
 
 infra-deploy: cloudformation-validate
