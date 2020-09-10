@@ -8,10 +8,12 @@ Resources:
       GroupDescription: Security group for Postgres Metadata DB. Public access
       GroupName: "{{ serviceName }}-{{ ENVIRONMENT }}-metadata-db-public-security-group"
       SecurityGroupEgress:
-        - CidrIp: 0.0.0.0/0
+      {% for ip in whitelistedIPs %}
+        - CidrIp: "{{ ip }}"
           FromPort: "{{ metadataDb.port }}"
-          IpProtocol: -1
+          IpProtocol: tcp
           ToPort: "{{ metadataDb.port }}"
+      {% endfor %}
       SecurityGroupIngress:
         - CidrIp: 0.0.0.0/0
           FromPort: "{{ metadataDb.port }}"

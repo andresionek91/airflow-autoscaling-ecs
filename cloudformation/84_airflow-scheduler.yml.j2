@@ -6,8 +6,6 @@ Resources:
     Properties:
       GroupDescription: Security group for Airflow Scheduler
       GroupName: "{{ serviceName }}-{{ ENVIRONMENT }}-scheduler-security-group"
-      SecurityGroupEgress:
-        {{ securityGroupEgressRules }}
       VpcId: !ImportValue network-VpcId
       Tags:
         - Key: Name

@@ -83,11 +83,8 @@ publicSubnet:
 
 # List of SecurityGroupEgress.
 # Will be used to whitelist IPs for webserver, flower, workers and scheduler
-securityGroupEgressRules:
-  - CidrIp: 0.0.0.0/0
-    FromPort: 0
-    IpProtocol: -1
-    ToPort: 0
+whitelistedIPs:
+  - 0.0.0.0/0
 
 metadataDb:
   instanceType: db.t3.micro
@@ -101,6 +98,7 @@ metadataDb:
   allocatedStorage: 20
   parameters:
     maxConnections: 100
+
 
 
 celeryBackend:
