@@ -99,8 +99,6 @@ metadataDb:
   deletionProtection: false
   enableIAMDatabaseAuthentication: true
   allocatedStorage: 20
-  secrets:
-    rotationScheduleDays: 30
   parameters:
     maxConnections: 100
 
