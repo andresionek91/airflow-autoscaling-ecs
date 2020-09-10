@@ -7,10 +7,7 @@ Resources:
       GroupDescription: Security group for Airflow Scheduler
       GroupName: "{{ serviceName }}-{{ ENVIRONMENT }}-scheduler-security-group"
       SecurityGroupEgress:
-        - CidrIp: 0.0.0.0/0
-          FromPort: 0
-          IpProtocol: -1
-          ToPort: 0
+        {{ securityGroupEgressRules }}
       VpcId: !ImportValue network-VpcId
       Tags:
         - Key: Name
