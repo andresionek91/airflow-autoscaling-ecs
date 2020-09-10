@@ -82,7 +82,7 @@ publicSubnet:
     availabilityZone: c
 
 metadataDb:
-  instanceType: db.t3.micro
+  instanceType: db.t3.small
   port: 5432
   dbName: airflow
   engine: postgres

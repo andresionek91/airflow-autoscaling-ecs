@@ -16,24 +16,24 @@ default_args = {
 
 execution_date = '{{ ds }}'  # Access execution date
 
-with DAG('crypto_extract',
-         description='DAG to extract Daily Summaries from MercadoBitcoin',
+with DAG('dbt',
+         description='DAG to run dbt',
          schedule_interval='0 1 * * *',
-         catchup=True,
+         catchup=False,
          default_args=default_args) as dag:
 
     t1 = ECSOperator(
-        task_id="crypto_extract",
+        task_id="dbt_run",
         dag=dag,
         aws_conn_id="aws_default",
         cluster="airflow-production-ecs-cluster",
-        task_definition="production-crypto-extract-image",
+        task_definition="production-dbt-image",
         launch_type="FARGATE",
         overrides={
             "containerOverrides": [
                 {
-                    "name": "production-crypto-extract-image",
-                    "command": ["python", "main.py", execution_date],
+                    "name": "production-dbt-image",
+                    "command": ["dbt", "run"],
                 }
             ],
         },

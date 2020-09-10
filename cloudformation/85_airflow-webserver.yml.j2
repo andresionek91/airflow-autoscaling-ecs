@@ -113,7 +113,7 @@ Resources:
   WebserverAlbTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
-      Name: "{{ serviceName }}-{{ ENVIRONMENT }}-webserver-alb-tg"
+      Name: "{{ serviceName }}-webserver-alb-tg"
       Port: "{{ service.webserver.port }}"
       Protocol: HTTP
       VpcId: !ImportValue network-VpcId
