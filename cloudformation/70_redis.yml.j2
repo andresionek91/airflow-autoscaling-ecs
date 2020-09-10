@@ -17,10 +17,12 @@ Resources:
       GroupDescription: Security group for Redis
       GroupName: "{{ serviceName }}-{{ ENVIRONMENT }}-redis-security-group"
       SecurityGroupEgress:
-        - CidrIp: 0.0.0.0/0
-          FromPort: 0
-          IpProtocol: -1
-          ToPort: 0
+      {% for ip in whitelistedIPs %}
+        - CidrIp: "{{ ip }}"
+          FromPort: "{{ celeryBackend.port }}"
+          IpProtocol: tcp
+          ToPort: "{{ celeryBackend.port }}"
+      {% endfor %}
       SecurityGroupIngress:
         - CidrIp: "{{ service.cidrBlock }}/16"
           FromPort: "{{ celeryBackend.port }}"

@@ -7,7 +7,16 @@ Resources:
       GroupDescription: Security group for Airflow Flower.  Allow all inbound traffic.
       GroupName: "{{ serviceName }}-{{ ENVIRONMENT }}-flower-external-security-group"
       SecurityGroupEgress:
-        {{ securityGroupEgressRules }}
+      {% for ip in whitelistedIPs %}
+        - CidrIp: "{{ ip }}"
+          FromPort: 80
+          IpProtocol: tcp
+          ToPort: 80
+        - CidrIp: "{{ ip }}"
+          FromPort: 443
+          IpProtocol: tcp
+          ToPort: 443
+      {% endfor %}
       SecurityGroupIngress:
         - CidrIp: 0.0.0.0/0
           FromPort: "{{ service.port }}"
