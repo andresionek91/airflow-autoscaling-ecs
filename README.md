@@ -45,6 +45,12 @@ To destroy your stack run the following command:
 make airflow-destroy
 ```
 
+## Update a Dag on AWS
+After creating or updating a DAG you need to rebuild Airflow image, push it to ECR and then restart the airflow service. To do all that, you just need to execute:
+```shell script
+make airflow-push-image
+```
+
 ## Features
 * Control all Airflow infrastructure from a single `service.yml` file.
 * Metadata DB Passwords Managed with AWS Secrets Manager.
