@@ -97,8 +97,6 @@ metadataDb:
   parameters:
     maxConnections: 100
 
-
-
 celeryBackend:
   port: 6379
   azMode: single-az

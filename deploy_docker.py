@@ -16,6 +16,9 @@ ECR_REPO_NAME = f'airflow-{ENVIRONMENT}'
 IMAGE_TAG = 'latest'
 
 
+class DockerException(Exception): pass
+
+
 def connect_to_ecr():
     client = boto3.client('ecr')
     token = client.get_authorization_token()
@@ -47,6 +50,10 @@ def tag_and_push_to_ecr(image, tag):
     ecr_repo_name = '{}/{}'.format(registry.replace('https://', ''), ECR_REPO_NAME)
     image.tag(ecr_repo_name, tag)
     push_log = docker_client.images.push(ecr_repo_name, tag=tag)
+
+    if 'errorDetail' in push_log:
+        logging.error(push_log)
+        raise DockerException()
     logging.info(push_log)
 
 
