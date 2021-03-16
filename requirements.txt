@@ -7,3 +7,5 @@ jinja2==2.11.2
 click==7.1.2
 docker==4.2.0
 apache-airflow-backport-providers-amazon==2020.6.24
+backoff
+ratelimit
