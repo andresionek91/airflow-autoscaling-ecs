@@ -11,7 +11,9 @@ infra-deploy: cloudformation-validate
 	python -c 'from deploy_cloudformation import create_or_update_stacks;  create_or_update_stacks(is_foundation=True)';
 
 push-to-ecr:
-	python -c 'from deploy_docker import update_airflow_image;  update_airflow_image()';
+	./deploy_docker.sh build $(tag)
+	./deploy_docker.sh tag $(tag)
+	./deploy_docker.sh push $(tag)
 
 airflow-deploy: infra-deploy
 	python -c 'from deploy_cloudformation import create_or_update_stacks;  create_or_update_stacks(is_foundation=False)';
