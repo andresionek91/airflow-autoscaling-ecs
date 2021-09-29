@@ -17,7 +17,7 @@ services:
       - 5432:5432
 
   webserver:
-    image: airflow:latest
+    image: airflow:autoscale-repo
     restart: always
     build: .
     depends_on:
@@ -35,6 +35,8 @@ services:
       - AIRFLOW_BASE_URL=http://localhost:8080
       - ENABLE_REMOTE_LOGGING=False
       - STAGE=dev
+      - AWHERE_TOKEN_URL=${AWHERE_TOKEN_URL}
+      - AWHERE_ENCODED_KEY=${AWHERE_ENCODED_KEY}
     volumes:
         - ./dags:/usr/local/airflow/dags
     ports:
@@ -47,7 +49,7 @@ services:
       retries: 3
 
   flower:
-    image: airflow:latest
+    image: airflow:autoscale-repo
     restart: always
     depends_on:
       - redis
@@ -66,7 +68,7 @@ services:
     command: flower
 
   scheduler:
-    image: airflow:latest
+    image: airflow:autoscale-repo
     restart: always
     depends_on:
       - webserver
@@ -84,10 +86,12 @@ services:
       - AIRFLOW_BASE_URL=http://localhost:8080
       - ENABLE_REMOTE_LOGGING=False
       - STAGE=dev
+      - AWHERE_TOKEN_URL=${AWHERE_TOKEN_URL}
+      - AWHERE_ENCODED_KEY=${AWHERE_ENCODED_KEY}
     command: scheduler
 
   worker:
-    image: airflow:latest
+    image: airflow:autoscale-repo
     restart: always
     depends_on:
       - webserver
@@ -106,4 +110,6 @@ services:
       - AIRFLOW_BASE_URL=http://localhost:8080
       - ENABLE_REMOTE_LOGGING=False
       - STAGE=dev
+      - AWHERE_TOKEN_URL=${AWHERE_TOKEN_URL}
+      - AWHERE_ENCODED_KEY=${AWHERE_ENCODED_KEY}
     command: worker

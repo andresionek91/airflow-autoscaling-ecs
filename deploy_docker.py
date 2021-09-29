@@ -12,8 +12,8 @@ docker_client = docker.from_env()
 
 ENVIRONMENT = os.environ['ENVIRONMENT']
 AWS_REGION = os.environ['AWS_REGION']
-ECR_REPO_NAME = f'airflow-{ENVIRONMENT}'
-IMAGE_TAG = 'latest'
+ECR_REPO_NAME = "airflow-{}".format(ENVIRONMENT)
+IMAGE_TAG = 'autoscale-repo'
 
 
 class DockerException(Exception): pass
@@ -23,7 +23,7 @@ def connect_to_ecr():
     client = boto3.client('ecr')
     token = client.get_authorization_token()
 
-    logging.info(f'CONNECTED TO ECR')
+    logging.info('CONNECTED TO ECR')
 
     b64token = token['authorizationData'][0]['authorizationToken'].encode('utf-8')
     username, password = base64.b64decode(b64token).decode('utf-8').split(':')
@@ -34,8 +34,8 @@ def connect_to_ecr():
 
 
 def build_image():
-    logging.info(f'BUILDING IMAGE: {ECR_REPO_NAME}:{IMAGE_TAG}')
-    image, buildlog = docker_client.images.build(path=_get_abs_path(''), rm=True, tag=f'{ECR_REPO_NAME}:{IMAGE_TAG}')
+    logging.info("BUILDING IMAGE: {ECR_REPO_NAME}:{IMAGE_TAG}")
+    image, buildlog = docker_client.images.build(path=_get_abs_path(''), rm=True, tag='{ECR_REPO_NAME}:{IMAGE_TAG}')
 
     for log in buildlog:
         if log.get('stream'):
@@ -46,7 +46,7 @@ def build_image():
 
 def tag_and_push_to_ecr(image, tag):
     registry = connect_to_ecr()
-    logging.info(f'Pushing image to ECR: {ECR_REPO_NAME}:{tag}')
+    logging.info("Pushing image to ECR: {ECR_REPO_NAME}:{tag}")
     ecr_repo_name = '{}/{}'.format(registry.replace('https://', ''), ECR_REPO_NAME)
     image.tag(ecr_repo_name, tag)
     push_log = docker_client.images.push(ecr_repo_name, tag=tag)

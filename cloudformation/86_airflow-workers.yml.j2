@@ -34,7 +34,7 @@ Resources:
       ContainerDefinitions:
         - Name: "{{ serviceName }}-{{ ENVIRONMENT }}-workers"
           Image: !Sub
-            - "${AWS::AccountId}.dkr.ecr.{{ AWS_REGION }}.amazonaws.com/${ecr_repository}:latest"
+            - "${AWS::AccountId}.dkr.ecr.{{ AWS_REGION }}.amazonaws.com/${ecr_repository}:autoscale-repo"
             - ecr_repository: !ImportValue ecr-AirflowDockerRepositoryName
           Essential: true
           PortMappings:
@@ -64,7 +64,7 @@ Resources:
             - Name: STAGE
               Value: "{{ ENVIRONMENT }}"
             - Name: FERNET_KEY
-              Value: {% raw %} !Join ['', ['{{resolve:secretsmanager:', !ImportValue secrets-AirflowFernetKeySecretId, ':SecretString:fernet_key}}' ]] {% endraw %}
+              Value: {% raw %} !Join ['', ['{{resolve:secretsmanager:', 'airflow-dev-fernet-key', ':SecretString:fernet_key}}' ]] {% endraw %}
           LogConfiguration:
             LogDriver: awslogs
             Options:

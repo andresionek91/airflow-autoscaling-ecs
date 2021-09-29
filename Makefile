@@ -13,7 +13,7 @@ infra-deploy: cloudformation-validate
 push-to-ecr:
 	python -c 'from deploy_docker import update_airflow_image;  update_airflow_image()';
 
-airflow-deploy: infra-deploy push-to-ecr
+airflow-deploy: infra-deploy
 	python -c 'from deploy_cloudformation import create_or_update_stacks;  create_or_update_stacks(is_foundation=False)';
 	python -c 'from deploy_cloudformation import log_outputs;  log_outputs()';
 
@@ -25,5 +25,5 @@ airflow-destroy:
 
 airflow-local:
 	pip install cryptography
-	export AIRFLOW_FERNET_KEY=$(shell python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())")
+	export AIRFLOW_FERNET_KEY=${FERNET_KEY}
 	docker-compose up --build

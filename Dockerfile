@@ -1,9 +1,9 @@
 # BUILD: docker build --rm -t airflow .
 # ORIGINAL SOURCE: https://github.com/puckel/docker-airflow
 
-FROM python:3.7-slim
+FROM python:3.8-slim
 LABEL version="1.0"
-LABEL maintainer="andresionek91"
+# LABEL maintainer="andresionek91"
 
 # Never prompts the user for choices on installation/configuration of packages
 ENV DEBIAN_FRONTEND noninteractive
@@ -86,6 +86,9 @@ RUN set -ex \
 
 COPY config/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
+
+COPY scripts ${AIRFLOW_HOME}/scripts
+RUN chmod +x ${AIRFLOW_HOME}/scripts/etl/*.py
 
 RUN chown -R airflow: ${AIRFLOW_HOME}
 

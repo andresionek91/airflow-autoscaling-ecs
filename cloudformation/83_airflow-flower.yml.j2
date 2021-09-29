@@ -86,7 +86,7 @@ Resources:
             - Name: STAGE
               Value: "{{ ENVIRONMENT }}"
             - Name: FERNET_KEY
-              Value: {% raw %} !Join ['', ['{{resolve:secretsmanager:', !ImportValue secrets-AirflowFernetKeySecretId, ':SecretString:fernet_key}}' ]] {% endraw %}
+              Value: {% raw %} !Join ['', ['{{resolve:secretsmanager:', 'airflow-dev-fernet-key', ':SecretString:fernet_key}}' ]] {% endraw %}
           LogConfiguration:
             LogDriver: awslogs
             Options:
