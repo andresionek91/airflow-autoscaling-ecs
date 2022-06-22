@@ -1,7 +1,7 @@
 boto3==1.13.19
 cryptography==2.9.2
 pandas==1.1.2
-numpy==1.18.4
+numpy==1.22.0
 toolz==0.9.0
 jinja2==2.11.2
 click==7.1.2
